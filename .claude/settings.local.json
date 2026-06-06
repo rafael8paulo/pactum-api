@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(openspec new *)",
+      "Bash(openspec status *)",
+      "Bash(openspec instructions *)",
+      "Bash(./mvnw test *)",
+      "Bash(Select-String -Path \"D:\\\\rafael\\\\pactum\\\\pactum-api\\\\openspec\\\\changes\\\\gestao-despesas-us03-us06\\\\tasks.md\" -Pattern \"- \\\\[ \\\\]\")",
+      "Bash(Measure-Object)",
+      "Bash(Select-Object -ExpandProperty Count)",
+      "Bash(openspec list *)",
+      "Bash(Test-Path \"D:\\\\rafael\\\\pactum\\\\pactum-api\\\\openspec\\\\specs\\\\cadastrar-receita\\\\spec.md\")",
+      "Bash(Test-Path \"D:\\\\rafael\\\\pactum\\\\pactum-api\\\\openspec\\\\specs\\\\editar-remover-receita\\\\spec.md\")",
+      "Bash(Test-Path \"D:\\\\rafael\\\\pactum\\\\pactum-api\\\\openspec\\\\specs\\\\listar-receitas\\\\spec.md\")",
+      "Bash(New-Item -ItemType Directory -Force \"D:\\\\rafael\\\\pactum\\\\pactum-api\\\\openspec\\\\specs\\\\cadastrar-receita\")",
+      "Bash(Out-Null)",
+      "Bash(New-Item -ItemType Directory -Force \"D:\\\\rafael\\\\pactum\\\\pactum-api\\\\openspec\\\\specs\\\\editar-remover-receita\")",
+      "Bash(New-Item -ItemType Directory -Force \"D:\\\\rafael\\\\pactum\\\\pactum-api\\\\openspec\\\\specs\\\\listar-receitas\")",
+      "Bash(Write-Output \"Directories created\")",
+      "PowerShell(New-Item *)",
+      "Bash(Move-Item \"D:\\\\rafael\\\\pactum\\\\pactum-api\\\\openspec\\\\changes\\\\gestao-receitas-us07-us09\" \"D:\\\\rafael\\\\pactum\\\\pactum-api\\\\openspec\\\\changes\\\\archive\\\\2026-06-06-gestao-receitas-us07-us09\")",
+      "PowerShell(Move-Item *)"
+    ]
+  }
+}
