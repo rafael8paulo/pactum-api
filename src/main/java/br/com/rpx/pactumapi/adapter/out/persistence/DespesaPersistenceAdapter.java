@@ -33,11 +33,12 @@ public class DespesaPersistenceAdapter implements SalvarDespesaPort, BuscarDespe
     }
 
     @Override
-    public List<Despesa> buscarPorFiltros(YearMonth competencia, CategoriaDespesa categoria, StatusDespesa status) {
+    public List<Despesa> buscarPorFiltros(YearMonth competencia, CategoriaDespesa categoria, StatusDespesa status, UUID usuarioId) {
         return repository.findByFiltros(
                 competencia.atDay(1),
                 categoria != null ? categoria.name() : null,
-                status != null ? status.name() : null
+                status != null ? status.name() : null,
+                usuarioId
         ).stream().map(DespesaPersistenceMapper::toDomain).toList();
     }
 

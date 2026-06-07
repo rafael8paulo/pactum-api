@@ -14,10 +14,12 @@ public interface ReceitaJpaRepository extends JpaRepository<ReceitaJpaEntity, UU
     @Query("""
             SELECT r FROM ReceitaJpaEntity r
             WHERE r.competencia = :competencia
+              AND r.usuarioId = :usuarioId
               AND (:categoria IS NULL OR r.categoria = :categoria)
             """)
     List<ReceitaJpaEntity> findByFiltros(
             @Param("competencia") LocalDate competencia,
-            @Param("categoria") String categoria
+            @Param("categoria") String categoria,
+            @Param("usuarioId") UUID usuarioId
     );
 }

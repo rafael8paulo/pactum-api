@@ -32,10 +32,11 @@ public class ReceitaPersistenceAdapter implements SalvarReceitaPort, BuscarRecei
     }
 
     @Override
-    public List<Receita> buscarPorFiltros(YearMonth competencia, CategoriaReceita categoria) {
+    public List<Receita> buscarPorFiltros(YearMonth competencia, CategoriaReceita categoria, UUID usuarioId) {
         return repository.findByFiltros(
                 competencia.atDay(1),
-                categoria != null ? categoria.name() : null
+                categoria != null ? categoria.name() : null,
+                usuarioId
         ).stream().map(ReceitaPersistenceMapper::toDomain).toList();
     }
 

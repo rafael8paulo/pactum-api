@@ -1,11 +1,14 @@
 package br.com.rpx.pactumapi.adapter.in.web;
 
+import br.com.rpx.pactumapi.config.security.UsuarioAutenticadoResolver;
 import br.com.rpx.pactumapi.domain.model.Patrimonio;
 import br.com.rpx.pactumapi.domain.port.in.CadastrarPatrimonioUseCase;
 import br.com.rpx.pactumapi.domain.port.in.ConsultarPatrimonioUseCase;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -23,7 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PatrimonioController.class)
+@WebMvcTest(value = PatrimonioController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
 class PatrimonioControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -31,10 +34,12 @@ class PatrimonioControllerTest {
 
     @MockitoBean CadastrarPatrimonioUseCase cadastrarUseCase;
     @MockitoBean ConsultarPatrimonioUseCase consultarUseCase;
+    @MockitoBean UsuarioAutenticadoResolver usuarioAutenticadoResolver;
 
     private static final UUID ID = UUID.randomUUID();
+    private static final UUID USUARIO_ID = UUID.randomUUID();
     private static final Patrimonio PATRIMONIO = new Patrimonio(ID, "Caixinha Turbo Nubank",
-            new BigDecimal("5069.02"), YearMonth.of(2025, 7));
+            new BigDecimal("5069.02"), YearMonth.of(2025, 7), USUARIO_ID);
 
     private static final String PAYLOAD_VALIDO = """
             {
@@ -44,9 +49,14 @@ class PatrimonioControllerTest {
             }
             """;
 
+    @BeforeEach
+    void setup() {
+        when(usuarioAutenticadoResolver.getUsuarioId()).thenReturn(USUARIO_ID);
+    }
+
     @Test
     void deve_retornar201_ao_cadastrar_patrimonio() throws Exception {
-        when(cadastrarUseCase.cadastrar(any())).thenReturn(PATRIMONIO);
+        when(cadastrarUseCase.cadastrar(any(), any())).thenReturn(PATRIMONIO);
 
         mockMvc.perform(post("/api/v1/patrimonio")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -67,7 +77,7 @@ class PatrimonioControllerTest {
 
     @Test
     void deve_retornar200_ao_consultar_patrimonio() throws Exception {
-        when(consultarUseCase.consultar(any())).thenReturn(List.of(PATRIMONIO));
+        when(consultarUseCase.consultar(any(), any())).thenReturn(List.of(PATRIMONIO));
 
         mockMvc.perform(get("/api/v1/patrimonio").param("competencia", "2025-07"))
                 .andExpect(status().isOk())

@@ -4,6 +4,7 @@ import br.com.rpx.pactumapi.application.dto.request.CadastrarPatrimonioRequest;
 import br.com.rpx.pactumapi.application.dto.response.ListaPatrimonioResponse;
 import br.com.rpx.pactumapi.application.dto.response.PatrimonioResponse;
 import br.com.rpx.pactumapi.application.mapper.PatrimonioMapper;
+import br.com.rpx.pactumapi.config.security.UsuarioAutenticadoResolver;
 import br.com.rpx.pactumapi.domain.port.in.CadastrarPatrimonioUseCase;
 import br.com.rpx.pactumapi.domain.port.in.ConsultarPatrimonioUseCase;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.YearMonth;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/patrimonio")
@@ -30,11 +32,14 @@ public class PatrimonioController {
 
     private final CadastrarPatrimonioUseCase cadastrarUseCase;
     private final ConsultarPatrimonioUseCase consultarUseCase;
+    private final UsuarioAutenticadoResolver usuarioAutenticadoResolver;
 
     public PatrimonioController(CadastrarPatrimonioUseCase cadastrarUseCase,
-                                ConsultarPatrimonioUseCase consultarUseCase) {
+                                ConsultarPatrimonioUseCase consultarUseCase,
+                                UsuarioAutenticadoResolver usuarioAutenticadoResolver) {
         this.cadastrarUseCase = cadastrarUseCase;
         this.consultarUseCase = consultarUseCase;
+        this.usuarioAutenticadoResolver = usuarioAutenticadoResolver;
     }
 
     @Operation(summary = "Cadastrar item de patrimônio")
@@ -44,7 +49,8 @@ public class PatrimonioController {
     })
     @PostMapping
     public ResponseEntity<PatrimonioResponse> cadastrar(@Valid @RequestBody CadastrarPatrimonioRequest request) {
-        var patrimonio = cadastrarUseCase.cadastrar(PatrimonioMapper.toDomain(request));
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        var patrimonio = cadastrarUseCase.cadastrar(PatrimonioMapper.toDomain(request), usuarioId);
         return ResponseEntity.status(HttpStatus.CREATED).body(PatrimonioMapper.toResponse(patrimonio));
     }
 
@@ -56,7 +62,8 @@ public class PatrimonioController {
     @GetMapping
     public ResponseEntity<ListaPatrimonioResponse> consultar(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth competencia) {
-        var itens = consultarUseCase.consultar(competencia);
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        var itens = consultarUseCase.consultar(competencia, usuarioId);
         return ResponseEntity.ok(PatrimonioMapper.toListResponse(itens));
     }
 }

@@ -33,32 +33,33 @@ class DespesaServiceTest {
     @Mock RemoverDespesaPort removerPort;
     @InjectMocks DespesaService service;
 
+    private final UUID usuarioId = UUID.randomUUID();
+
     private Despesa despesaFixture(UUID id) {
         return new Despesa(id, "Financiamento", new BigDecimal("1335.50"),
-                StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.FINANCIAMENTO);
+                StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.FINANCIAMENTO, usuarioId);
     }
 
     @Test
     void deve_cadastrar_despesa() {
-        UUID id = UUID.randomUUID();
-        Despesa despesa = despesaFixture(id);
-        when(salvarPort.salvar(despesa)).thenReturn(despesa);
+        Despesa despesa = despesaFixture(null);
+        when(salvarPort.salvar(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Despesa resultado = service.cadastrar(despesa);
+        Despesa resultado = service.cadastrar(despesa, usuarioId);
 
-        assertThat(resultado).isEqualTo(despesa);
-        verify(salvarPort).salvar(despesa);
+        assertThat(resultado.usuarioId()).isEqualTo(usuarioId);
+        verify(salvarPort).salvar(any());
     }
 
     @Test
     void deve_listar_despesas_por_filtros() {
         YearMonth competencia = YearMonth.of(2025, 7);
-        when(buscarPort.buscarPorFiltros(competencia, null, null)).thenReturn(List.of());
+        when(buscarPort.buscarPorFiltros(competencia, null, null, usuarioId)).thenReturn(List.of());
 
-        List<Despesa> resultado = service.listar(competencia, null, null);
+        List<Despesa> resultado = service.listar(competencia, null, null, usuarioId);
 
         assertThat(resultado).isEmpty();
-        verify(buscarPort).buscarPorFiltros(competencia, null, null);
+        verify(buscarPort).buscarPorFiltros(competencia, null, null, usuarioId);
     }
 
     @Test
@@ -68,7 +69,7 @@ class DespesaServiceTest {
         when(buscarPort.buscarPorId(id)).thenReturn(Optional.of(existente));
         when(salvarPort.salvar(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Despesa resultado = service.atualizar(id, StatusDespesa.PENDENTE);
+        Despesa resultado = service.atualizar(id, StatusDespesa.PENDENTE, usuarioId);
 
         assertThat(resultado.status()).isEqualTo(StatusDespesa.PENDENTE);
         assertThat(resultado.id()).isEqualTo(id);
@@ -79,7 +80,17 @@ class DespesaServiceTest {
         UUID id = UUID.randomUUID();
         when(buscarPort.buscarPorId(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.atualizar(id, StatusDespesa.PAGA))
+        assertThatThrownBy(() -> service.atualizar(id, StatusDespesa.PAGA, usuarioId))
+                .isInstanceOf(DespesaNaoEncontradaException.class);
+    }
+
+    @Test
+    void deve_lancar_exception_ao_atualizar_despesa_de_outro_usuario() {
+        UUID id = UUID.randomUUID();
+        UUID outroUsuario = UUID.randomUUID();
+        when(buscarPort.buscarPorId(id)).thenReturn(Optional.of(despesaFixture(id)));
+
+        assertThatThrownBy(() -> service.atualizar(id, StatusDespesa.PAGA, outroUsuario))
                 .isInstanceOf(DespesaNaoEncontradaException.class);
     }
 
@@ -88,7 +99,7 @@ class DespesaServiceTest {
         UUID id = UUID.randomUUID();
         when(buscarPort.buscarPorId(id)).thenReturn(Optional.of(despesaFixture(id)));
 
-        service.remover(id);
+        service.remover(id, usuarioId);
 
         verify(removerPort).remover(id);
     }
@@ -98,7 +109,17 @@ class DespesaServiceTest {
         UUID id = UUID.randomUUID();
         when(buscarPort.buscarPorId(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.remover(id))
+        assertThatThrownBy(() -> service.remover(id, usuarioId))
+                .isInstanceOf(DespesaNaoEncontradaException.class);
+    }
+
+    @Test
+    void deve_lancar_exception_ao_remover_despesa_de_outro_usuario() {
+        UUID id = UUID.randomUUID();
+        UUID outroUsuario = UUID.randomUUID();
+        when(buscarPort.buscarPorId(id)).thenReturn(Optional.of(despesaFixture(id)));
+
+        assertThatThrownBy(() -> service.remover(id, outroUsuario))
                 .isInstanceOf(DespesaNaoEncontradaException.class);
     }
 }

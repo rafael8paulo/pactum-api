@@ -10,5 +10,6 @@ public record Despesa(
         BigDecimal valor,
         StatusDespesa status,
         YearMonth competencia,
-        CategoriaDespesa categoria
+        CategoriaDespesa categoria,
+        UUID usuarioId
 ) {}

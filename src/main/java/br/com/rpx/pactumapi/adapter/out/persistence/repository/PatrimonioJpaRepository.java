@@ -8,5 +8,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface PatrimonioJpaRepository extends JpaRepository<PatrimonioJpaEntity, UUID> {
-    List<PatrimonioJpaEntity> findByCompetencia(LocalDate competencia);
+    List<PatrimonioJpaEntity> findByCompetenciaAndUsuarioId(LocalDate competencia, UUID usuarioId);
 }

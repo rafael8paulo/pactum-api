@@ -43,6 +43,9 @@ public class DespesaJpaEntity {
     @Column(nullable = false, length = 50)
     private String categoria;
 
+    @Column(name = "usuario_id", nullable = false)
+    private UUID usuarioId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

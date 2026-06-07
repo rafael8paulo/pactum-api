@@ -10,5 +10,5 @@ import java.util.UUID;
 
 public interface BuscarReceitasPort {
     Optional<Receita> buscarPorId(UUID id);
-    List<Receita> buscarPorFiltros(YearMonth competencia, CategoriaReceita categoria);
+    List<Receita> buscarPorFiltros(YearMonth competencia, CategoriaReceita categoria, UUID usuarioId);
 }

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.time.YearMonth;
 import java.util.List;
+import java.util.UUID;
 
 @UseCase
 @RequiredArgsConstructor
@@ -19,12 +20,14 @@ public class PatrimonioService implements CadastrarPatrimonioUseCase, ConsultarP
     private final BuscarPatrimonioPort buscarPatrimonioPort;
 
     @Override
-    public Patrimonio cadastrar(Patrimonio patrimonio) {
-        return salvarPatrimonioPort.salvar(patrimonio);
+    public Patrimonio cadastrar(Patrimonio patrimonio, UUID usuarioId) {
+        Patrimonio comUsuario = new Patrimonio(null, patrimonio.descricao(), patrimonio.valor(),
+                patrimonio.competencia(), usuarioId);
+        return salvarPatrimonioPort.salvar(comUsuario);
     }
 
     @Override
-    public List<Patrimonio> consultar(YearMonth competencia) {
-        return buscarPatrimonioPort.buscarPorCompetencia(competencia);
+    public List<Patrimonio> consultar(YearMonth competencia, UUID usuarioId) {
+        return buscarPatrimonioPort.buscarPorCompetencia(competencia, usuarioId);
     }
 }

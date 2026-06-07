@@ -9,5 +9,6 @@ public record Receita(
         String descricao,
         BigDecimal valor,
         YearMonth competencia,
-        CategoriaReceita categoria
+        CategoriaReceita categoria,
+        UUID usuarioId
 ) {}

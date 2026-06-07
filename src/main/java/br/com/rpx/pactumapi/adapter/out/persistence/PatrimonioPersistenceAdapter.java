@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.YearMonth;
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
@@ -23,8 +24,8 @@ public class PatrimonioPersistenceAdapter implements SalvarPatrimonioPort, Busca
     }
 
     @Override
-    public List<Patrimonio> buscarPorCompetencia(YearMonth competencia) {
-        return repository.findByCompetencia(competencia.atDay(1))
+    public List<Patrimonio> buscarPorCompetencia(YearMonth competencia, UUID usuarioId) {
+        return repository.findByCompetenciaAndUsuarioId(competencia.atDay(1), usuarioId)
                 .stream().map(PatrimonioPersistenceMapper::toDomain).toList();
     }
 }

@@ -2,11 +2,14 @@ package br.com.rpx.pactumapi.adapter.in.web;
 
 import br.com.rpx.pactumapi.application.dto.response.ErrorResponse;
 import br.com.rpx.pactumapi.domain.exception.DespesaNaoEncontradaException;
+import br.com.rpx.pactumapi.domain.exception.EmailJaCadastradoException;
 import br.com.rpx.pactumapi.domain.exception.ReceitaNaoEncontradaException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -28,6 +31,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, message, request.getRequestURI());
     }
 
+    @ExceptionHandler(EmailJaCadastradoException.class)
+    public ResponseEntity<ErrorResponse> handleEmailJaCadastrado(
+            EmailJaCadastradoException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
+    }
+
     @ExceptionHandler(DespesaNaoEncontradaException.class)
     public ResponseEntity<ErrorResponse> handleDespesaNaoEncontrada(
             DespesaNaoEncontradaException ex, HttpServletRequest request) {
@@ -38,6 +47,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleReceitaNaoEncontrada(
             ReceitaNaoEncontradaException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthentication(
+            AuthenticationException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

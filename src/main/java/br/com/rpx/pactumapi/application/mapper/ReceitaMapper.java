@@ -14,11 +14,11 @@ public class ReceitaMapper {
     private ReceitaMapper() {}
 
     public static Receita toDomain(CadastrarReceitaRequest request) {
-        return new Receita(null, request.descricao(), request.valor(), request.competencia(), request.categoria());
+        return new Receita(null, request.descricao(), request.valor(), request.competencia(), request.categoria(), null);
     }
 
     public static Receita toDomain(EditarReceitaRequest request) {
-        return new Receita(null, request.descricao(), request.valor(), request.competencia(), request.categoria());
+        return new Receita(null, request.descricao(), request.valor(), request.competencia(), request.categoria(), null);
     }
 
     public static ReceitaResponse toResponse(Receita receita) {

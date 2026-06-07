@@ -5,6 +5,7 @@ import br.com.rpx.pactumapi.application.dto.request.EditarReceitaRequest;
 import br.com.rpx.pactumapi.application.dto.response.ListaReceitasResponse;
 import br.com.rpx.pactumapi.application.dto.response.ReceitaResponse;
 import br.com.rpx.pactumapi.application.mapper.ReceitaMapper;
+import br.com.rpx.pactumapi.config.security.UsuarioAutenticadoResolver;
 import br.com.rpx.pactumapi.domain.model.CategoriaReceita;
 import br.com.rpx.pactumapi.domain.port.in.CadastrarReceitaUseCase;
 import br.com.rpx.pactumapi.domain.port.in.EditarReceitaUseCase;
@@ -40,15 +41,18 @@ public class ReceitaController {
     private final ListarReceitasUseCase listarUseCase;
     private final EditarReceitaUseCase editarUseCase;
     private final RemoverReceitaUseCase removerUseCase;
+    private final UsuarioAutenticadoResolver usuarioAutenticadoResolver;
 
     public ReceitaController(CadastrarReceitaUseCase cadastrarUseCase,
                              ListarReceitasUseCase listarUseCase,
                              EditarReceitaUseCase editarUseCase,
-                             RemoverReceitaUseCase removerUseCase) {
+                             RemoverReceitaUseCase removerUseCase,
+                             UsuarioAutenticadoResolver usuarioAutenticadoResolver) {
         this.cadastrarUseCase = cadastrarUseCase;
         this.listarUseCase = listarUseCase;
         this.editarUseCase = editarUseCase;
         this.removerUseCase = removerUseCase;
+        this.usuarioAutenticadoResolver = usuarioAutenticadoResolver;
     }
 
     @Operation(summary = "Cadastrar receita")
@@ -58,7 +62,8 @@ public class ReceitaController {
     })
     @PostMapping
     public ResponseEntity<ReceitaResponse> cadastrar(@Valid @RequestBody CadastrarReceitaRequest request) {
-        var receita = cadastrarUseCase.cadastrar(ReceitaMapper.toDomain(request));
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        var receita = cadastrarUseCase.cadastrar(ReceitaMapper.toDomain(request), usuarioId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ReceitaMapper.toResponse(receita));
     }
 
@@ -71,7 +76,8 @@ public class ReceitaController {
     public ResponseEntity<ListaReceitasResponse> listar(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth competencia,
             @RequestParam(required = false) CategoriaReceita categoria) {
-        var receitas = listarUseCase.listar(competencia, categoria);
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        var receitas = listarUseCase.listar(competencia, categoria, usuarioId);
         return ResponseEntity.ok(ReceitaMapper.toListResponse(receitas));
     }
 
@@ -85,7 +91,8 @@ public class ReceitaController {
     public ResponseEntity<ReceitaResponse> editar(
             @PathVariable UUID id,
             @Valid @RequestBody EditarReceitaRequest request) {
-        var receita = editarUseCase.editar(id, ReceitaMapper.toDomain(request));
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        var receita = editarUseCase.editar(id, ReceitaMapper.toDomain(request), usuarioId);
         return ResponseEntity.ok(ReceitaMapper.toResponse(receita));
     }
 
@@ -96,7 +103,8 @@ public class ReceitaController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> remover(@PathVariable UUID id) {
-        removerUseCase.remover(id);
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        removerUseCase.remover(id, usuarioId);
         return ResponseEntity.noContent().build();
     }
 }

@@ -13,7 +13,7 @@ public class PatrimonioMapper {
     private PatrimonioMapper() {}
 
     public static Patrimonio toDomain(CadastrarPatrimonioRequest request) {
-        return new Patrimonio(null, request.descricao(), request.valor(), request.competencia());
+        return new Patrimonio(null, request.descricao(), request.valor(), request.competencia(), null);
     }
 
     public static PatrimonioResponse toResponse(Patrimonio patrimonio) {

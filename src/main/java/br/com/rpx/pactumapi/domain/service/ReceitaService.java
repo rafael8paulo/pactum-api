@@ -26,27 +26,37 @@ public class ReceitaService implements CadastrarReceitaUseCase, ListarReceitasUs
     private final RemoverReceitaPort removerReceitaPort;
 
     @Override
-    public Receita cadastrar(Receita receita) {
-        return salvarReceitaPort.salvar(receita);
+    public Receita cadastrar(Receita receita, UUID usuarioId) {
+        Receita comUsuario = new Receita(null, receita.descricao(), receita.valor(),
+                receita.competencia(), receita.categoria(), usuarioId);
+        return salvarReceitaPort.salvar(comUsuario);
     }
 
     @Override
-    public List<Receita> listar(YearMonth competencia, CategoriaReceita categoria) {
-        return buscarReceitasPort.buscarPorFiltros(competencia, categoria);
+    public List<Receita> listar(YearMonth competencia, CategoriaReceita categoria, UUID usuarioId) {
+        return buscarReceitasPort.buscarPorFiltros(competencia, categoria, usuarioId);
     }
 
     @Override
-    public Receita editar(UUID id, Receita receita) {
-        buscarReceitasPort.buscarPorId(id)
-                .orElseThrow(() -> new ReceitaNaoEncontradaException(id));
-        Receita receitaAtualizada = new Receita(id, receita.descricao(), receita.valor(), receita.competencia(), receita.categoria());
+    public Receita editar(UUID id, Receita receita, UUID usuarioId) {
+        Receita existente = buscarPorIdEValidarDono(id, usuarioId);
+        Receita receitaAtualizada = new Receita(id, receita.descricao(), receita.valor(),
+                receita.competencia(), receita.categoria(), existente.usuarioId());
         return salvarReceitaPort.salvar(receitaAtualizada);
     }
 
     @Override
-    public void remover(UUID id) {
-        buscarReceitasPort.buscarPorId(id)
-                .orElseThrow(() -> new ReceitaNaoEncontradaException(id));
+    public void remover(UUID id, UUID usuarioId) {
+        buscarPorIdEValidarDono(id, usuarioId);
         removerReceitaPort.remover(id);
+    }
+
+    private Receita buscarPorIdEValidarDono(UUID id, UUID usuarioId) {
+        Receita existente = buscarReceitasPort.buscarPorId(id)
+                .orElseThrow(() -> new ReceitaNaoEncontradaException(id));
+        if (!existente.usuarioId().equals(usuarioId)) {
+            throw new ReceitaNaoEncontradaException(id);
+        }
+        return existente;
     }
 }

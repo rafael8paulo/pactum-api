@@ -24,9 +24,11 @@ class DespesaPersistenceAdapterIT {
     @Autowired DespesaPersistenceAdapter adapter;
     @Autowired DespesaJpaRepository repository;
 
+    private final UUID usuarioId = UUID.randomUUID();
+
     private Despesa novaDespesa() {
         return new Despesa(null, "Teste", new BigDecimal("500.00"),
-                StatusDespesa.PENDENTE, YearMonth.of(2025, 7), CategoriaDespesa.OUTROS);
+                StatusDespesa.PENDENTE, YearMonth.of(2025, 7), CategoriaDespesa.OUTROS, usuarioId);
     }
 
     @Test
@@ -43,7 +45,7 @@ class DespesaPersistenceAdapterIT {
     void deve_buscar_despesas_por_filtros() {
         adapter.salvar(novaDespesa());
 
-        List<Despesa> resultado = adapter.buscarPorFiltros(YearMonth.of(2025, 7), null, null);
+        List<Despesa> resultado = adapter.buscarPorFiltros(YearMonth.of(2025, 7), null, null, usuarioId);
 
         assertThat(resultado).hasSize(1);
     }
@@ -51,14 +53,26 @@ class DespesaPersistenceAdapterIT {
     @Test
     void deve_filtrar_por_categoria() {
         adapter.salvar(novaDespesa());
-        Despesa outra = new Despesa(null, "Outra", new BigDecimal("100.00"),
-                StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.LAZER);
-        adapter.salvar(outra);
+        adapter.salvar(new Despesa(null, "Outra", new BigDecimal("100.00"),
+                StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.LAZER, usuarioId));
 
-        List<Despesa> resultado = adapter.buscarPorFiltros(YearMonth.of(2025, 7), CategoriaDespesa.OUTROS, null);
+        List<Despesa> resultado = adapter.buscarPorFiltros(YearMonth.of(2025, 7), CategoriaDespesa.OUTROS, null, usuarioId);
 
         assertThat(resultado).hasSize(1);
         assertThat(resultado.get(0).categoria()).isEqualTo(CategoriaDespesa.OUTROS);
+    }
+
+    @Test
+    void deve_retornar_apenas_despesas_do_usuario() {
+        UUID outroUsuario = UUID.randomUUID();
+        adapter.salvar(novaDespesa());
+        adapter.salvar(new Despesa(null, "Alheia", new BigDecimal("200.00"),
+                StatusDespesa.PENDENTE, YearMonth.of(2025, 7), CategoriaDespesa.OUTROS, outroUsuario));
+
+        List<Despesa> resultado = adapter.buscarPorFiltros(YearMonth.of(2025, 7), null, null, usuarioId);
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.get(0).descricao()).isEqualTo("Teste");
     }
 
     @Test

@@ -15,50 +15,52 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PatrimonioServiceTest {
 
-    @Mock SalvarPatrimonioPort salvarPort;
-    @Mock BuscarPatrimonioPort buscarPort;
+    @Mock SalvarPatrimonioPort salvarPatrimonioPort;
+    @Mock BuscarPatrimonioPort buscarPatrimonioPort;
     @InjectMocks PatrimonioService service;
 
+    private final UUID usuarioId = UUID.randomUUID();
+
     private Patrimonio patrimonioFixture(UUID id) {
-        return new Patrimonio(id, "Caixinha Turbo Nubank", new BigDecimal("5069.02"), YearMonth.of(2025, 7));
+        return new Patrimonio(id, "Caixinha Turbo Nubank", new BigDecimal("5069.02"),
+                YearMonth.of(2025, 7), usuarioId);
     }
 
     @Test
     void deve_cadastrar_patrimonio() {
-        UUID id = UUID.randomUUID();
-        Patrimonio patrimonio = patrimonioFixture(id);
-        when(salvarPort.salvar(patrimonio)).thenReturn(patrimonio);
+        when(salvarPatrimonioPort.salvar(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Patrimonio resultado = service.cadastrar(patrimonio);
+        Patrimonio resultado = service.cadastrar(patrimonioFixture(null), usuarioId);
 
-        assertThat(resultado).isEqualTo(patrimonio);
-        verify(salvarPort).salvar(patrimonio);
+        assertThat(resultado.usuarioId()).isEqualTo(usuarioId);
+        verify(salvarPatrimonioPort).salvar(any());
     }
 
     @Test
     void deve_consultar_patrimonio_por_competencia() {
         YearMonth competencia = YearMonth.of(2025, 7);
         Patrimonio patrimonio = patrimonioFixture(UUID.randomUUID());
-        when(buscarPort.buscarPorCompetencia(competencia)).thenReturn(List.of(patrimonio));
+        when(buscarPatrimonioPort.buscarPorCompetencia(competencia, usuarioId)).thenReturn(List.of(patrimonio));
 
-        List<Patrimonio> resultado = service.consultar(competencia);
+        List<Patrimonio> resultado = service.consultar(competencia, usuarioId);
 
         assertThat(resultado).hasSize(1);
-        verify(buscarPort).buscarPorCompetencia(competencia);
+        verify(buscarPatrimonioPort).buscarPorCompetencia(competencia, usuarioId);
     }
 
     @Test
     void deve_retornar_lista_vazia_quando_sem_itens() {
         YearMonth competencia = YearMonth.of(2025, 1);
-        when(buscarPort.buscarPorCompetencia(competencia)).thenReturn(List.of());
+        when(buscarPatrimonioPort.buscarPorCompetencia(competencia, usuarioId)).thenReturn(List.of());
 
-        List<Patrimonio> resultado = service.consultar(competencia);
+        List<Patrimonio> resultado = service.consultar(competencia, usuarioId);
 
         assertThat(resultado).isEmpty();
     }

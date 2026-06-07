@@ -14,7 +14,8 @@ public class PatrimonioPersistenceMapper {
                 entity.getId(),
                 entity.getDescricao(),
                 entity.getValor(),
-                YearMonth.from(entity.getCompetencia())
+                YearMonth.from(entity.getCompetencia()),
+                entity.getUsuarioId()
         );
     }
 
@@ -24,6 +25,7 @@ public class PatrimonioPersistenceMapper {
         entity.setDescricao(patrimonio.descricao());
         entity.setValor(patrimonio.valor());
         entity.setCompetencia(patrimonio.competencia().atDay(1));
+        entity.setUsuarioId(patrimonio.usuarioId());
         return entity;
     }
 }

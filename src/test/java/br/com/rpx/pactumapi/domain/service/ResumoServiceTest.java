@@ -31,23 +31,25 @@ class ResumoServiceTest {
     @Mock BuscarDespesasPort buscarDespesasPort;
     @InjectMocks ResumoService service;
 
+    private final UUID usuarioId = UUID.randomUUID();
+
     private Receita receita(BigDecimal valor) {
-        return new Receita(UUID.randomUUID(), "Receita", valor, YearMonth.of(2025, 7), CategoriaReceita.SALARIO);
+        return new Receita(UUID.randomUUID(), "Receita", valor, YearMonth.of(2025, 7), CategoriaReceita.SALARIO, usuarioId);
     }
 
     private Despesa despesa(BigDecimal valor) {
-        return new Despesa(UUID.randomUUID(), "Despesa", valor, StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.OUTROS);
+        return new Despesa(UUID.randomUUID(), "Despesa", valor, StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.OUTROS, usuarioId);
     }
 
     @Test
     void deve_retornar_resumo_com_totais_e_saldo_corretos() {
         YearMonth competencia = YearMonth.of(2025, 7);
-        when(buscarReceitasPort.buscarPorFiltros(competencia, null))
+        when(buscarReceitasPort.buscarPorFiltros(competencia, null, usuarioId))
                 .thenReturn(List.of(receita(new BigDecimal("5000.00"))));
-        when(buscarDespesasPort.buscarPorFiltros(competencia, null, null))
+        when(buscarDespesasPort.buscarPorFiltros(competencia, null, null, usuarioId))
                 .thenReturn(List.of(despesa(new BigDecimal("3000.00"))));
 
-        ResumoMensal resumo = service.consultar(competencia);
+        ResumoMensal resumo = service.consultar(competencia, usuarioId);
 
         assertThat(resumo.totalReceitas()).isEqualByComparingTo("5000.00");
         assertThat(resumo.totalDespesas()).isEqualByComparingTo("3000.00");
@@ -57,10 +59,10 @@ class ResumoServiceTest {
     @Test
     void deve_retornar_zeros_para_mes_sem_lancamentos() {
         YearMonth competencia = YearMonth.of(2025, 1);
-        when(buscarReceitasPort.buscarPorFiltros(competencia, null)).thenReturn(List.of());
-        when(buscarDespesasPort.buscarPorFiltros(competencia, null, null)).thenReturn(List.of());
+        when(buscarReceitasPort.buscarPorFiltros(competencia, null, usuarioId)).thenReturn(List.of());
+        when(buscarDespesasPort.buscarPorFiltros(competencia, null, null, usuarioId)).thenReturn(List.of());
 
-        ResumoMensal resumo = service.consultar(competencia);
+        ResumoMensal resumo = service.consultar(competencia, usuarioId);
 
         assertThat(resumo.totalReceitas()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(resumo.totalDespesas()).isEqualByComparingTo(BigDecimal.ZERO);
@@ -69,10 +71,10 @@ class ResumoServiceTest {
 
     @Test
     void deve_retornar_historico_com_12_meses() {
-        when(buscarReceitasPort.buscarPorFiltros(any(), isNull())).thenReturn(List.of());
-        when(buscarDespesasPort.buscarPorFiltros(any(), isNull(), isNull())).thenReturn(List.of());
+        when(buscarReceitasPort.buscarPorFiltros(any(), isNull(), any())).thenReturn(List.of());
+        when(buscarDespesasPort.buscarPorFiltros(any(), isNull(), isNull(), any())).thenReturn(List.of());
 
-        List<ResumoMensal> historico = service.consultar(2025);
+        List<ResumoMensal> historico = service.consultar(2025, usuarioId);
 
         assertThat(historico).hasSize(12);
         assertThat(historico.get(0).competencia()).isEqualTo(YearMonth.of(2025, 1));
@@ -81,10 +83,10 @@ class ResumoServiceTest {
 
     @Test
     void deve_retornar_historico_zerado_quando_sem_lancamentos() {
-        when(buscarReceitasPort.buscarPorFiltros(any(), isNull())).thenReturn(List.of());
-        when(buscarDespesasPort.buscarPorFiltros(any(), isNull(), isNull())).thenReturn(List.of());
+        when(buscarReceitasPort.buscarPorFiltros(any(), isNull(), any())).thenReturn(List.of());
+        when(buscarDespesasPort.buscarPorFiltros(any(), isNull(), isNull(), any())).thenReturn(List.of());
 
-        List<ResumoMensal> historico = service.consultar(2020);
+        List<ResumoMensal> historico = service.consultar(2020, usuarioId);
 
         assertThat(historico).hasSize(12);
         assertThat(historico.stream().map(ResumoMensal::saldo))

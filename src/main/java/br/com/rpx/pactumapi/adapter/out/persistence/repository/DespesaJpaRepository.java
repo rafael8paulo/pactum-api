@@ -14,12 +14,14 @@ public interface DespesaJpaRepository extends JpaRepository<DespesaJpaEntity, UU
     @Query("""
             SELECT d FROM DespesaJpaEntity d
             WHERE d.competencia = :competencia
+              AND d.usuarioId = :usuarioId
               AND (:categoria IS NULL OR d.categoria = :categoria)
               AND (:status IS NULL OR d.status = :status)
             """)
     List<DespesaJpaEntity> findByFiltros(
             @Param("competencia") LocalDate competencia,
             @Param("categoria") String categoria,
-            @Param("status") String status
+            @Param("status") String status,
+            @Param("usuarioId") UUID usuarioId
     );
 }

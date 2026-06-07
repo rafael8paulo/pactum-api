@@ -8,7 +8,6 @@ import br.com.rpx.pactumapi.domain.model.Despesa;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 
 public class DespesaMapper {
 
@@ -16,12 +15,12 @@ public class DespesaMapper {
 
     public static Despesa toDomain(CadastrarDespesaRequest request) {
         return new Despesa(null, request.descricao(), request.valor(),
-                request.status(), request.competencia(), request.categoria());
+                request.status(), request.competencia(), request.categoria(), null);
     }
 
     public static Despesa toDomain(EditarDespesaRequest request) {
         return new Despesa(null, request.descricao(), request.valor(),
-                request.status(), request.competencia(), request.categoria());
+                request.status(), request.competencia(), request.categoria(), null);
     }
 
     public static DespesaResponse toResponse(Despesa despesa) {

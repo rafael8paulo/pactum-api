@@ -5,7 +5,8 @@ import br.com.rpx.pactumapi.domain.model.Receita;
 
 import java.time.YearMonth;
 import java.util.List;
+import java.util.UUID;
 
 public interface ListarReceitasUseCase {
-    List<Receita> listar(YearMonth competencia, CategoriaReceita categoria);
+    List<Receita> listar(YearMonth competencia, CategoriaReceita categoria, UUID usuarioId);
 }

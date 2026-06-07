@@ -16,7 +16,8 @@ public class ReceitaPersistenceMapper {
                 entity.getDescricao(),
                 entity.getValor(),
                 YearMonth.from(entity.getCompetencia()),
-                CategoriaReceita.valueOf(entity.getCategoria())
+                CategoriaReceita.valueOf(entity.getCategoria()),
+                entity.getUsuarioId()
         );
     }
 
@@ -27,6 +28,7 @@ public class ReceitaPersistenceMapper {
         entity.setValor(receita.valor());
         entity.setCompetencia(receita.competencia().atDay(1));
         entity.setCategoria(receita.categoria().name());
+        entity.setUsuarioId(receita.usuarioId());
         return entity;
     }
 }

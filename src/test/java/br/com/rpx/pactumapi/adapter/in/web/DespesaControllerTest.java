@@ -1,5 +1,6 @@
 package br.com.rpx.pactumapi.adapter.in.web;
 
+import br.com.rpx.pactumapi.config.security.UsuarioAutenticadoResolver;
 import br.com.rpx.pactumapi.domain.exception.DespesaNaoEncontradaException;
 import br.com.rpx.pactumapi.domain.model.CategoriaDespesa;
 import br.com.rpx.pactumapi.domain.model.Despesa;
@@ -10,8 +11,10 @@ import br.com.rpx.pactumapi.domain.port.in.EditarDespesaUseCase;
 import br.com.rpx.pactumapi.domain.port.in.ListarDespesasUseCase;
 import br.com.rpx.pactumapi.domain.port.in.RemoverDespesaUseCase;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -34,7 +37,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(DespesaController.class)
+@WebMvcTest(value = DespesaController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
 class DespesaControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -45,10 +48,12 @@ class DespesaControllerTest {
     @MockitoBean AtualizarStatusDespesaUseCase atualizarStatusUseCase;
     @MockitoBean EditarDespesaUseCase editarUseCase;
     @MockitoBean RemoverDespesaUseCase removerUseCase;
+    @MockitoBean UsuarioAutenticadoResolver usuarioAutenticadoResolver;
 
     private static final UUID ID = UUID.randomUUID();
+    private static final UUID USUARIO_ID = UUID.randomUUID();
     private static final Despesa DESPESA = new Despesa(ID, "Financiamento", new BigDecimal("1335.50"),
-            StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.FINANCIAMENTO);
+            StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.FINANCIAMENTO, USUARIO_ID);
 
     private static final String PAYLOAD_VALIDO = """
             {
@@ -60,9 +65,14 @@ class DespesaControllerTest {
             }
             """;
 
+    @BeforeEach
+    void setup() {
+        when(usuarioAutenticadoResolver.getUsuarioId()).thenReturn(USUARIO_ID);
+    }
+
     @Test
     void deve_retornar201_ao_cadastrar_despesa() throws Exception {
-        when(cadastrarUseCase.cadastrar(any())).thenReturn(DESPESA);
+        when(cadastrarUseCase.cadastrar(any(), any())).thenReturn(DESPESA);
 
         mockMvc.perform(post("/api/v1/despesas")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -83,7 +93,7 @@ class DespesaControllerTest {
 
     @Test
     void deve_retornar200_ao_listar_despesas() throws Exception {
-        when(listarUseCase.listar(any(), any(), any())).thenReturn(List.of(DESPESA));
+        when(listarUseCase.listar(any(), any(), any(), any())).thenReturn(List.of(DESPESA));
 
         mockMvc.perform(get("/api/v1/despesas").param("competencia", "2025-07"))
                 .andExpect(status().isOk())
@@ -93,7 +103,7 @@ class DespesaControllerTest {
 
     @Test
     void deve_retornar200_ao_atualizar_status() throws Exception {
-        when(atualizarStatusUseCase.atualizar(eq(ID), any())).thenReturn(DESPESA);
+        when(atualizarStatusUseCase.atualizar(eq(ID), any(), any())).thenReturn(DESPESA);
 
         mockMvc.perform(patch("/api/v1/despesas/{id}/status", ID)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -104,7 +114,7 @@ class DespesaControllerTest {
 
     @Test
     void deve_retornar404_ao_atualizar_status_de_despesa_inexistente() throws Exception {
-        when(atualizarStatusUseCase.atualizar(eq(ID), any()))
+        when(atualizarStatusUseCase.atualizar(eq(ID), any(), any()))
                 .thenThrow(new DespesaNaoEncontradaException(ID));
 
         mockMvc.perform(patch("/api/v1/despesas/{id}/status", ID)
@@ -116,7 +126,7 @@ class DespesaControllerTest {
 
     @Test
     void deve_retornar200_ao_editar_despesa() throws Exception {
-        when(editarUseCase.editar(eq(ID), any())).thenReturn(DESPESA);
+        when(editarUseCase.editar(eq(ID), any(), any())).thenReturn(DESPESA);
 
         mockMvc.perform(put("/api/v1/despesas/{id}", ID)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -133,7 +143,7 @@ class DespesaControllerTest {
 
     @Test
     void deve_retornar404_ao_remover_despesa_inexistente() throws Exception {
-        doThrow(new DespesaNaoEncontradaException(ID)).when(removerUseCase).remover(ID);
+        doThrow(new DespesaNaoEncontradaException(ID)).when(removerUseCase).remover(eq(ID), any());
 
         mockMvc.perform(delete("/api/v1/despesas/{id}", ID))
                 .andExpect(status().isNotFound())

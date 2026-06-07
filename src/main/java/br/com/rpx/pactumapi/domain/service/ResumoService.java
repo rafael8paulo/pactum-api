@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 @UseCase
@@ -21,20 +22,20 @@ public class ResumoService implements ConsultarResumoMensalUseCase, ConsultarHis
     private final BuscarDespesasPort buscarDespesasPort;
 
     @Override
-    public ResumoMensal consultar(YearMonth competencia) {
-        BigDecimal totalReceitas = buscarReceitasPort.buscarPorFiltros(competencia, null).stream()
+    public ResumoMensal consultar(YearMonth competencia, UUID usuarioId) {
+        BigDecimal totalReceitas = buscarReceitasPort.buscarPorFiltros(competencia, null, usuarioId).stream()
                 .map(r -> r.valor())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalDespesas = buscarDespesasPort.buscarPorFiltros(competencia, null, null).stream()
+        BigDecimal totalDespesas = buscarDespesasPort.buscarPorFiltros(competencia, null, null, usuarioId).stream()
                 .map(d -> d.valor())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         return new ResumoMensal(competencia, totalReceitas, totalDespesas, totalReceitas.subtract(totalDespesas));
     }
 
     @Override
-    public List<ResumoMensal> consultar(int ano) {
+    public List<ResumoMensal> consultar(int ano, UUID usuarioId) {
         return IntStream.rangeClosed(1, 12)
-                .mapToObj(mes -> consultar(YearMonth.of(ano, mes)))
+                .mapToObj(mes -> consultar(YearMonth.of(ano, mes), usuarioId))
                 .toList();
     }
 }

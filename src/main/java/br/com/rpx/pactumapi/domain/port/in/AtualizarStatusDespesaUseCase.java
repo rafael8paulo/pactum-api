@@ -6,5 +6,5 @@ import br.com.rpx.pactumapi.domain.model.StatusDespesa;
 import java.util.UUID;
 
 public interface AtualizarStatusDespesaUseCase {
-    Despesa atualizar(UUID id, StatusDespesa status);
+    Despesa atualizar(UUID id, StatusDespesa status, UUID usuarioId);
 }

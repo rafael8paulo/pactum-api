@@ -39,49 +39,45 @@ public class DespesaService implements
     }
 
     @Override
-    public Despesa cadastrar(Despesa despesa) {
-        return salvarPort.salvar(despesa);
+    public Despesa cadastrar(Despesa despesa, UUID usuarioId) {
+        Despesa comUsuario = new Despesa(null, despesa.descricao(), despesa.valor(),
+                despesa.status(), despesa.competencia(), despesa.categoria(), usuarioId);
+        return salvarPort.salvar(comUsuario);
     }
 
     @Override
-    public List<Despesa> listar(YearMonth competencia, CategoriaDespesa categoria, StatusDespesa status) {
-        return buscarPort.buscarPorFiltros(competencia, categoria, status);
+    public List<Despesa> listar(YearMonth competencia, CategoriaDespesa categoria, StatusDespesa status, UUID usuarioId) {
+        return buscarPort.buscarPorFiltros(competencia, categoria, status, usuarioId);
     }
 
     @Override
-    public Despesa atualizar(UUID id, StatusDespesa status) {
-        Despesa existente = buscarPort.buscarPorId(id)
-                .orElseThrow(() -> new DespesaNaoEncontradaException(id));
-        Despesa atualizada = new Despesa(
-                existente.id(),
-                existente.descricao(),
-                existente.valor(),
-                status,
-                existente.competencia(),
-                existente.categoria()
-        );
+    public Despesa atualizar(UUID id, StatusDespesa status, UUID usuarioId) {
+        Despesa existente = buscarPorIdEValidarDono(id, usuarioId);
+        Despesa atualizada = new Despesa(existente.id(), existente.descricao(), existente.valor(),
+                status, existente.competencia(), existente.categoria(), usuarioId);
         return salvarPort.salvar(atualizada);
     }
 
     @Override
-    public Despesa editar(UUID id, Despesa despesa) {
-        buscarPort.buscarPorId(id)
-                .orElseThrow(() -> new DespesaNaoEncontradaException(id));
-        Despesa editada = new Despesa(
-                id,
-                despesa.descricao(),
-                despesa.valor(),
-                despesa.status(),
-                despesa.competencia(),
-                despesa.categoria()
-        );
+    public Despesa editar(UUID id, Despesa despesa, UUID usuarioId) {
+        buscarPorIdEValidarDono(id, usuarioId);
+        Despesa editada = new Despesa(id, despesa.descricao(), despesa.valor(),
+                despesa.status(), despesa.competencia(), despesa.categoria(), usuarioId);
         return salvarPort.salvar(editada);
     }
 
     @Override
-    public void remover(UUID id) {
-        buscarPort.buscarPorId(id)
-                .orElseThrow(() -> new DespesaNaoEncontradaException(id));
+    public void remover(UUID id, UUID usuarioId) {
+        buscarPorIdEValidarDono(id, usuarioId);
         removerPort.remover(id);
+    }
+
+    private Despesa buscarPorIdEValidarDono(UUID id, UUID usuarioId) {
+        Despesa existente = buscarPort.buscarPorId(id)
+                .orElseThrow(() -> new DespesaNaoEncontradaException(id));
+        if (!existente.usuarioId().equals(usuarioId)) {
+            throw new DespesaNaoEncontradaException(id);
+        }
+        return existente;
     }
 }

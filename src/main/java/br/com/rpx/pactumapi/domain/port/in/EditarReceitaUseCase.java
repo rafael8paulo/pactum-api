@@ -5,5 +5,5 @@ import br.com.rpx.pactumapi.domain.model.Receita;
 import java.util.UUID;
 
 public interface EditarReceitaUseCase {
-    Receita editar(UUID id, Receita receita);
+    Receita editar(UUID id, Receita receita, UUID usuarioId);
 }

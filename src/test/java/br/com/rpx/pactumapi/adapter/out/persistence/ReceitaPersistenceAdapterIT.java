@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,9 +23,11 @@ class ReceitaPersistenceAdapterIT {
     @Autowired ReceitaPersistenceAdapter adapter;
     @Autowired ReceitaJpaRepository repository;
 
+    private final UUID usuarioId = UUID.randomUUID();
+
     private Receita novaReceita() {
         return new Receita(null, "Salário", new BigDecimal("5000.00"),
-                YearMonth.of(2025, 7), CategoriaReceita.SALARIO);
+                YearMonth.of(2025, 7), CategoriaReceita.SALARIO, usuarioId);
     }
 
     @Test
@@ -41,7 +44,7 @@ class ReceitaPersistenceAdapterIT {
     void deve_buscar_receitas_por_filtros() {
         adapter.salvar(novaReceita());
 
-        List<Receita> resultado = adapter.buscarPorFiltros(YearMonth.of(2025, 7), null);
+        List<Receita> resultado = adapter.buscarPorFiltros(YearMonth.of(2025, 7), null, usuarioId);
 
         assertThat(resultado).hasSize(1);
     }
@@ -49,14 +52,26 @@ class ReceitaPersistenceAdapterIT {
     @Test
     void deve_filtrar_por_categoria() {
         adapter.salvar(novaReceita());
-        Receita outra = new Receita(null, "Freelance", new BigDecimal("1500.00"),
-                YearMonth.of(2025, 7), CategoriaReceita.FREELANCE);
-        adapter.salvar(outra);
+        adapter.salvar(new Receita(null, "Freelance", new BigDecimal("1500.00"),
+                YearMonth.of(2025, 7), CategoriaReceita.FREELANCE, usuarioId));
 
-        List<Receita> resultado = adapter.buscarPorFiltros(YearMonth.of(2025, 7), CategoriaReceita.SALARIO);
+        List<Receita> resultado = adapter.buscarPorFiltros(YearMonth.of(2025, 7), CategoriaReceita.SALARIO, usuarioId);
 
         assertThat(resultado).hasSize(1);
         assertThat(resultado.get(0).categoria()).isEqualTo(CategoriaReceita.SALARIO);
+    }
+
+    @Test
+    void deve_retornar_apenas_receitas_do_usuario() {
+        UUID outroUsuario = UUID.randomUUID();
+        adapter.salvar(novaReceita());
+        adapter.salvar(new Receita(null, "Alheia", new BigDecimal("100.00"),
+                YearMonth.of(2025, 7), CategoriaReceita.OUTROS, outroUsuario));
+
+        List<Receita> resultado = adapter.buscarPorFiltros(YearMonth.of(2025, 7), null, usuarioId);
+
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.get(0).descricao()).isEqualTo("Salário");
     }
 
     @Test

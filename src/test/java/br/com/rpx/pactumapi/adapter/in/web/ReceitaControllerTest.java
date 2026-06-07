@@ -1,5 +1,6 @@
 package br.com.rpx.pactumapi.adapter.in.web;
 
+import br.com.rpx.pactumapi.config.security.UsuarioAutenticadoResolver;
 import br.com.rpx.pactumapi.domain.exception.ReceitaNaoEncontradaException;
 import br.com.rpx.pactumapi.domain.model.CategoriaReceita;
 import br.com.rpx.pactumapi.domain.model.Receita;
@@ -8,8 +9,10 @@ import br.com.rpx.pactumapi.domain.port.in.EditarReceitaUseCase;
 import br.com.rpx.pactumapi.domain.port.in.ListarReceitasUseCase;
 import br.com.rpx.pactumapi.domain.port.in.RemoverReceitaUseCase;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -31,7 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ReceitaController.class)
+@WebMvcTest(value = ReceitaController.class, excludeAutoConfiguration = SecurityAutoConfiguration.class)
 class ReceitaControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -41,10 +44,12 @@ class ReceitaControllerTest {
     @MockitoBean ListarReceitasUseCase listarUseCase;
     @MockitoBean EditarReceitaUseCase editarUseCase;
     @MockitoBean RemoverReceitaUseCase removerUseCase;
+    @MockitoBean UsuarioAutenticadoResolver usuarioAutenticadoResolver;
 
     private static final UUID ID = UUID.randomUUID();
+    private static final UUID USUARIO_ID = UUID.randomUUID();
     private static final Receita RECEITA = new Receita(ID, "Salário", new BigDecimal("5000.00"),
-            YearMonth.of(2025, 7), CategoriaReceita.SALARIO);
+            YearMonth.of(2025, 7), CategoriaReceita.SALARIO, USUARIO_ID);
 
     private static final String PAYLOAD_VALIDO = """
             {
@@ -55,9 +60,14 @@ class ReceitaControllerTest {
             }
             """;
 
+    @BeforeEach
+    void setup() {
+        when(usuarioAutenticadoResolver.getUsuarioId()).thenReturn(USUARIO_ID);
+    }
+
     @Test
     void deve_retornar201_ao_cadastrar_receita() throws Exception {
-        when(cadastrarUseCase.cadastrar(any())).thenReturn(RECEITA);
+        when(cadastrarUseCase.cadastrar(any(), any())).thenReturn(RECEITA);
 
         mockMvc.perform(post("/api/v1/receitas")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -78,7 +88,7 @@ class ReceitaControllerTest {
 
     @Test
     void deve_retornar200_ao_listar_receitas() throws Exception {
-        when(listarUseCase.listar(any(), any())).thenReturn(List.of(RECEITA));
+        when(listarUseCase.listar(any(), any(), any())).thenReturn(List.of(RECEITA));
 
         mockMvc.perform(get("/api/v1/receitas").param("competencia", "2025-07"))
                 .andExpect(status().isOk())
@@ -88,7 +98,7 @@ class ReceitaControllerTest {
 
     @Test
     void deve_retornar200_ao_editar_receita() throws Exception {
-        when(editarUseCase.editar(eq(ID), any())).thenReturn(RECEITA);
+        when(editarUseCase.editar(eq(ID), any(), any())).thenReturn(RECEITA);
 
         mockMvc.perform(put("/api/v1/receitas/{id}", ID)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -99,7 +109,7 @@ class ReceitaControllerTest {
 
     @Test
     void deve_retornar404_ao_editar_receita_inexistente() throws Exception {
-        when(editarUseCase.editar(eq(ID), any()))
+        when(editarUseCase.editar(eq(ID), any(), any()))
                 .thenThrow(new ReceitaNaoEncontradaException(ID));
 
         mockMvc.perform(put("/api/v1/receitas/{id}", ID)
@@ -117,7 +127,7 @@ class ReceitaControllerTest {
 
     @Test
     void deve_retornar404_ao_remover_receita_inexistente() throws Exception {
-        doThrow(new ReceitaNaoEncontradaException(ID)).when(removerUseCase).remover(ID);
+        doThrow(new ReceitaNaoEncontradaException(ID)).when(removerUseCase).remover(eq(ID), any());
 
         mockMvc.perform(delete("/api/v1/receitas/{id}", ID))
                 .andExpect(status().isNotFound())

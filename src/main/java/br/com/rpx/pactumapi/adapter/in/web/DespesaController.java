@@ -6,6 +6,7 @@ import br.com.rpx.pactumapi.application.dto.request.EditarDespesaRequest;
 import br.com.rpx.pactumapi.application.dto.response.DespesaResponse;
 import br.com.rpx.pactumapi.application.dto.response.ListaDespesasResponse;
 import br.com.rpx.pactumapi.application.mapper.DespesaMapper;
+import br.com.rpx.pactumapi.config.security.UsuarioAutenticadoResolver;
 import br.com.rpx.pactumapi.domain.model.CategoriaDespesa;
 import br.com.rpx.pactumapi.domain.model.StatusDespesa;
 import br.com.rpx.pactumapi.domain.port.in.AtualizarStatusDespesaUseCase;
@@ -45,17 +46,20 @@ public class DespesaController {
     private final AtualizarStatusDespesaUseCase atualizarStatusUseCase;
     private final EditarDespesaUseCase editarUseCase;
     private final RemoverDespesaUseCase removerUseCase;
+    private final UsuarioAutenticadoResolver usuarioAutenticadoResolver;
 
     public DespesaController(CadastrarDespesaUseCase cadastrarUseCase,
                              ListarDespesasUseCase listarUseCase,
                              AtualizarStatusDespesaUseCase atualizarStatusUseCase,
                              EditarDespesaUseCase editarUseCase,
-                             RemoverDespesaUseCase removerUseCase) {
+                             RemoverDespesaUseCase removerUseCase,
+                             UsuarioAutenticadoResolver usuarioAutenticadoResolver) {
         this.cadastrarUseCase = cadastrarUseCase;
         this.listarUseCase = listarUseCase;
         this.atualizarStatusUseCase = atualizarStatusUseCase;
         this.editarUseCase = editarUseCase;
         this.removerUseCase = removerUseCase;
+        this.usuarioAutenticadoResolver = usuarioAutenticadoResolver;
     }
 
     @Operation(summary = "Cadastrar despesa")
@@ -65,7 +69,8 @@ public class DespesaController {
     })
     @PostMapping
     public ResponseEntity<DespesaResponse> cadastrar(@Valid @RequestBody CadastrarDespesaRequest request) {
-        var despesa = cadastrarUseCase.cadastrar(DespesaMapper.toDomain(request));
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        var despesa = cadastrarUseCase.cadastrar(DespesaMapper.toDomain(request), usuarioId);
         return ResponseEntity.status(HttpStatus.CREATED).body(DespesaMapper.toResponse(despesa));
     }
 
@@ -79,7 +84,8 @@ public class DespesaController {
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM") YearMonth competencia,
             @RequestParam(required = false) CategoriaDespesa categoria,
             @RequestParam(required = false) StatusDespesa status) {
-        var despesas = listarUseCase.listar(competencia, categoria, status);
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        var despesas = listarUseCase.listar(competencia, categoria, status, usuarioId);
         return ResponseEntity.ok(DespesaMapper.toListResponse(despesas));
     }
 
@@ -93,7 +99,8 @@ public class DespesaController {
     public ResponseEntity<DespesaResponse> atualizarStatus(
             @PathVariable UUID id,
             @Valid @RequestBody AtualizarStatusDespesaRequest request) {
-        var despesa = atualizarStatusUseCase.atualizar(id, request.status());
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        var despesa = atualizarStatusUseCase.atualizar(id, request.status(), usuarioId);
         return ResponseEntity.ok(DespesaMapper.toResponse(despesa));
     }
 
@@ -107,7 +114,8 @@ public class DespesaController {
     public ResponseEntity<DespesaResponse> editar(
             @PathVariable UUID id,
             @Valid @RequestBody EditarDespesaRequest request) {
-        var despesa = editarUseCase.editar(id, DespesaMapper.toDomain(request));
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        var despesa = editarUseCase.editar(id, DespesaMapper.toDomain(request), usuarioId);
         return ResponseEntity.ok(DespesaMapper.toResponse(despesa));
     }
 
@@ -118,7 +126,8 @@ public class DespesaController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> remover(@PathVariable UUID id) {
-        removerUseCase.remover(id);
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        removerUseCase.remover(id, usuarioId);
         return ResponseEntity.noContent().build();
     }
 }
