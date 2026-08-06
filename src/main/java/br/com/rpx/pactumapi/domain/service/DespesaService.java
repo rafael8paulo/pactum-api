@@ -41,7 +41,7 @@ public class DespesaService implements
     @Override
     public Despesa cadastrar(Despesa despesa, UUID usuarioId) {
         Despesa comUsuario = new Despesa(null, despesa.descricao(), despesa.valor(),
-                despesa.status(), despesa.competencia(), despesa.categoria(), usuarioId);
+                despesa.status(), despesa.competencia(), despesa.categoria(), usuarioId, null);
         return salvarPort.salvar(comUsuario);
     }
 
@@ -54,15 +54,15 @@ public class DespesaService implements
     public Despesa atualizar(UUID id, StatusDespesa status, UUID usuarioId) {
         Despesa existente = buscarPorIdEValidarDono(id, usuarioId);
         Despesa atualizada = new Despesa(existente.id(), existente.descricao(), existente.valor(),
-                status, existente.competencia(), existente.categoria(), usuarioId);
+                status, existente.competencia(), existente.categoria(), usuarioId, existente.contaRecorrenteId());
         return salvarPort.salvar(atualizada);
     }
 
     @Override
     public Despesa editar(UUID id, Despesa despesa, UUID usuarioId) {
-        buscarPorIdEValidarDono(id, usuarioId);
+        Despesa existente = buscarPorIdEValidarDono(id, usuarioId);
         Despesa editada = new Despesa(id, despesa.descricao(), despesa.valor(),
-                despesa.status(), despesa.competencia(), despesa.categoria(), usuarioId);
+                despesa.status(), despesa.competencia(), despesa.categoria(), usuarioId, existente.contaRecorrenteId());
         return salvarPort.salvar(editada);
     }
 

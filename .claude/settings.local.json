@@ -34,7 +34,8 @@
       "Bash(powershell -Command \"Select-String -Path openspec/changes/autenticacao-multitenancy/tasks.md -Pattern '- \\\\[ \\\\]' | Select-Object -First 10\")",
       "Bash(./mvnw compile *)",
       "Bash(./mvnw test-compile *)",
-      "Bash(powershell -Command \"Select-String -Path openspec/changes/autenticacao-multitenancy/tasks.md -Pattern '\\\\[x\\\\]' | Measure-Object | Select-Object -ExpandProperty Count; Select-String -Path openspec/changes/autenticacao-multitenancy/tasks.md -Pattern '\\\\[ \\\\]' | Measure-Object | Select-Object -ExpandProperty Count\")"
+      "Bash(powershell -Command \"Select-String -Path openspec/changes/autenticacao-multitenancy/tasks.md -Pattern '\\\\[x\\\\]' | Measure-Object | Select-Object -ExpandProperty Count; Select-String -Path openspec/changes/autenticacao-multitenancy/tasks.md -Pattern '\\\\[ \\\\]' | Measure-Object | Select-Object -ExpandProperty Count\")",
+      "Bash([ -e \"$TARGET\" ])"
     ]
   }
 }

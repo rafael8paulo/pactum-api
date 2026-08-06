@@ -37,7 +37,7 @@ class DespesaServiceTest {
 
     private Despesa despesaFixture(UUID id) {
         return new Despesa(id, "Financiamento", new BigDecimal("1335.50"),
-                StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.FINANCIAMENTO, usuarioId);
+                StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.FINANCIAMENTO, usuarioId, null);
     }
 
     @Test

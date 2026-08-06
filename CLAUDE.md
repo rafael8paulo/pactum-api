@@ -73,7 +73,34 @@ config/           → beans Spring, configurações gerais
 
 ---
 
-## 4. Nomenclatura por Camada
+## 4. Deploy
+
+A aplicação roda em produção via imagem Docker multi-stage (`maven:3.9-eclipse-temurin-17` → `eclipse-temurin:17-jre-alpine`), publicada no GHCR. O schema do PostgreSQL é versionado via Flyway (`src/main/resources/db/migration`) — não há necessidade de rodar nada manualmente, o Flyway aplica as migrations pendentes no boot da API.
+
+### Deploy automático via GitHub Actions
+
+Todo push em `main` dispara `.github/workflows/deploy.yml`, em 3 jobs sequenciais (`needs`):
+
+1. **test** — `./mvnw test` como gate; falha o pipeline (sem publicar imagem nem tocar na VPS) se algum teste quebrar.
+2. **build-and-push** — builda a imagem a partir do `Dockerfile` existente e publica no GHCR (`ghcr.io/rafael8paulo/pactum-api`) com as tags `latest` e `${{ github.sha }}`.
+3. **deploy** — via SSH (`appleboy/ssh-action`), roda `docker compose pull pactum-api && docker compose up -d --wait pactum-api` na VPS.
+
+Configuração necessária no repositório GitHub (Settings → Secrets and variables → Actions):
+
+| Nome | Tipo | Descrição |
+|---|---|---|
+| `SSH_PRIVATE_KEY` | Secret | Chave privada SSH para acesso à VPS |
+| `VPS_HOST` | Secret | Host/IP da VPS |
+| `VPS_USER` | Secret | Usuário SSH da VPS |
+| `VPS_SSH_PORT` | Secret | Porta SSH da VPS |
+
+O token do GHCR usa o `GITHUB_TOKEN` automático do workflow (`permissions: packages: write`), sem secret adicional. Assume-se que a VPS já possui um `docker-compose.yml` próprio com um serviço `pactum-api` apontando para a imagem do GHCR.
+
+**Testes de integração (`*IT.java`) não rodam neste pipeline** — dependem de Postgres/Testcontainers não provisionados em CI; ficam para uma iteração futura.
+
+---
+
+## 5. Nomenclatura por Camada
 
 | Camada | Exemplo |
 |---|---|
@@ -89,7 +116,7 @@ config/           → beans Spring, configurações gerais
 
 ---
 
-## 5. Padrões de Código Java 17
+## 6. Padrões de Código Java 17
 
 - Use **records** para DTOs e value objects imutáveis
 - Use **`Optional<T>`** no retorno de ports de saída que buscam por ID
@@ -99,7 +126,7 @@ config/           → beans Spring, configurações gerais
 
 ---
 
-## 6. Regras Clean Code
+## 7. Regras Clean Code
 
 - Nomes expressivos e sem abreviações obscuras
 - Métodos com responsabilidade única — guideline de até **20 linhas**
@@ -109,7 +136,7 @@ config/           → beans Spring, configurações gerais
 
 ---
 
-## 7. SOLID na Arquitetura Hexagonal
+## 8. SOLID na Arquitetura Hexagonal
 
 - **SRP**: cada interface de use case tem um único propósito (`FindX`, `ManageX`, `DeleteX`)
 - **OCP**: adicione comportamento criando novos ports/adapters, sem modificar os existentes
@@ -119,7 +146,7 @@ config/           → beans Spring, configurações gerais
 
 ---
 
-## 8. Padrões Spring Boot 3.x
+## 9. Padrões Spring Boot 3.x
 
 - `@RestController` apenas em `adapter/in/web/` — **sem lógica de negócio**
 - Receba DTOs de `application/`, converta para domain model antes de chamar o use case
@@ -131,7 +158,7 @@ config/           → beans Spring, configurações gerais
 
 ---
 
-## 9. Regras para Testes
+## 10. Regras para Testes
 
 - **Domain puro** testado sem Spring, sem mocks de framework — apenas JUnit 5
 - **Use cases** testados com `@ExtendWith(MockitoExtension.class)`, mockando os ports de saída
@@ -142,7 +169,7 @@ config/           → beans Spring, configurações gerais
 
 ---
 
-## 10. O Que Nunca Fazer
+## 11. O Que Nunca Fazer
 
 - Nunca importe classes de `adapter/` ou Spring dentro de `domain/`
 - Nunca use `@Entity` ou `@Column` no domain model — isso é detalhe de persistência
@@ -154,7 +181,7 @@ config/           → beans Spring, configurações gerais
 
 ---
 
-## 11. Instruções para o Agente de IA
+## 12. Instruções para o Agente de IA
 
 Antes de criar qualquer classe, identifique em qual camada ela pertence.
 

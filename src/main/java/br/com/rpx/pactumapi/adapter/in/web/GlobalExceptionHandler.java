@@ -1,6 +1,7 @@
 package br.com.rpx.pactumapi.adapter.in.web;
 
 import br.com.rpx.pactumapi.application.dto.response.ErrorResponse;
+import br.com.rpx.pactumapi.domain.exception.ContaRecorrenteNaoEncontradaException;
 import br.com.rpx.pactumapi.domain.exception.DespesaNaoEncontradaException;
 import br.com.rpx.pactumapi.domain.exception.EmailJaCadastradoException;
 import br.com.rpx.pactumapi.domain.exception.ReceitaNaoEncontradaException;
@@ -11,8 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
@@ -47,6 +50,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleReceitaNaoEncontrada(
             ReceitaNaoEncontradaException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(ContaRecorrenteNaoEncontradaException.class)
+    public ResponseEntity<ErrorResponse> handleContaRecorrenteNaoEncontrada(
+            ContaRecorrenteNaoEncontradaException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+            IllegalArgumentException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<ErrorResponse> handleParametroInvalido(
+            Exception ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(AuthenticationException.class)

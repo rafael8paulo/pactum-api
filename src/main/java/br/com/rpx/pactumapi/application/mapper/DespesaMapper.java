@@ -15,17 +15,17 @@ public class DespesaMapper {
 
     public static Despesa toDomain(CadastrarDespesaRequest request) {
         return new Despesa(null, request.descricao(), request.valor(),
-                request.status(), request.competencia(), request.categoria(), null);
+                request.status(), request.competencia(), request.categoria(), null, null);
     }
 
     public static Despesa toDomain(EditarDespesaRequest request) {
         return new Despesa(null, request.descricao(), request.valor(),
-                request.status(), request.competencia(), request.categoria(), null);
+                request.status(), request.competencia(), request.categoria(), null, null);
     }
 
     public static DespesaResponse toResponse(Despesa despesa) {
         return new DespesaResponse(despesa.id(), despesa.descricao(), despesa.valor(),
-                despesa.status(), despesa.competencia(), despesa.categoria());
+                despesa.status(), despesa.competencia(), despesa.categoria(), despesa.contaRecorrenteId());
     }
 
     public static ListaDespesasResponse toListResponse(List<Despesa> despesas) {

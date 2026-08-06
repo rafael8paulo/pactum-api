@@ -12,4 +12,5 @@ import java.util.UUID;
 public interface BuscarDespesasPort {
     Optional<Despesa> buscarPorId(UUID id);
     List<Despesa> buscarPorFiltros(YearMonth competencia, CategoriaDespesa categoria, StatusDespesa status, UUID usuarioId);
+    boolean existePorContaRecorrenteECompetencia(UUID contaRecorrenteId, YearMonth competencia);
 }

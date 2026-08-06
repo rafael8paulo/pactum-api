@@ -11,5 +11,6 @@ public record Despesa(
         StatusDespesa status,
         YearMonth competencia,
         CategoriaDespesa categoria,
-        UUID usuarioId
+        UUID usuarioId,
+        UUID contaRecorrenteId
 ) {}
