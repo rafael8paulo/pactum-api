@@ -19,7 +19,8 @@ public class DespesaPersistenceMapper {
                 StatusDespesa.valueOf(entity.getStatus()),
                 YearMonth.from(entity.getCompetencia()),
                 CategoriaDespesa.valueOf(entity.getCategoria()),
-                entity.getUsuarioId()
+                entity.getUsuarioId(),
+                entity.getContaRecorrenteId()
         );
     }
 
@@ -32,6 +33,7 @@ public class DespesaPersistenceMapper {
         entity.setCompetencia(despesa.competencia().atDay(1));
         entity.setCategoria(despesa.categoria().name());
         entity.setUsuarioId(despesa.usuarioId());
+        entity.setContaRecorrenteId(despesa.contaRecorrenteId());
         return entity;
     }
 }

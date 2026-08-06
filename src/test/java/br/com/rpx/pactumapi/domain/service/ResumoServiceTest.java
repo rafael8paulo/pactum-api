@@ -38,7 +38,7 @@ class ResumoServiceTest {
     }
 
     private Despesa despesa(BigDecimal valor) {
-        return new Despesa(UUID.randomUUID(), "Despesa", valor, StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.OUTROS, usuarioId);
+        return new Despesa(UUID.randomUUID(), "Despesa", valor, StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.OUTROS, usuarioId, null);
     }
 
     @Test

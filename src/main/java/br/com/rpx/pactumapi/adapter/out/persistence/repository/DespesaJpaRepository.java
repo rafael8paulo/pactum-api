@@ -24,4 +24,6 @@ public interface DespesaJpaRepository extends JpaRepository<DespesaJpaEntity, UU
             @Param("status") String status,
             @Param("usuarioId") UUID usuarioId
     );
+
+    boolean existsByContaRecorrenteIdAndCompetencia(UUID contaRecorrenteId, LocalDate competencia);
 }

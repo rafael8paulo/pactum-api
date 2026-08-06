@@ -46,4 +46,9 @@ public class DespesaPersistenceAdapter implements SalvarDespesaPort, BuscarDespe
     public void remover(UUID id) {
         repository.deleteById(id);
     }
+
+    @Override
+    public boolean existePorContaRecorrenteECompetencia(UUID contaRecorrenteId, YearMonth competencia) {
+        return repository.existsByContaRecorrenteIdAndCompetencia(contaRecorrenteId, competencia.atDay(1));
+    }
 }

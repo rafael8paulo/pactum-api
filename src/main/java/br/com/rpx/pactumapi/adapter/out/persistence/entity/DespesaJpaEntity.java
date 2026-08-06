@@ -46,6 +46,9 @@ public class DespesaJpaEntity {
     @Column(name = "usuario_id", nullable = false)
     private UUID usuarioId;
 
+    @Column(name = "conta_recorrente_id")
+    private UUID contaRecorrenteId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

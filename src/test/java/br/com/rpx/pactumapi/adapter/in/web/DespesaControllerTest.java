@@ -53,7 +53,7 @@ class DespesaControllerTest {
     private static final UUID ID = UUID.randomUUID();
     private static final UUID USUARIO_ID = UUID.randomUUID();
     private static final Despesa DESPESA = new Despesa(ID, "Financiamento", new BigDecimal("1335.50"),
-            StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.FINANCIAMENTO, USUARIO_ID);
+            StatusDespesa.PAGA, YearMonth.of(2025, 7), CategoriaDespesa.FINANCIAMENTO, USUARIO_ID, null);
 
     private static final String PAYLOAD_VALIDO = """
             {

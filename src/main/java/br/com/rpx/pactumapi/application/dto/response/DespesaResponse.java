@@ -14,5 +14,6 @@ public record DespesaResponse(
         BigDecimal valor,
         StatusDespesa status,
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM") YearMonth competencia,
-        CategoriaDespesa categoria
+        CategoriaDespesa categoria,
+        UUID contaRecorrenteId
 ) {}
