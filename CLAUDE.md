@@ -79,22 +79,13 @@ A aplicação roda em produção via imagem Docker multi-stage (`maven:3.9-eclip
 
 ### Deploy automático via GitHub Actions
 
-Todo push em `main` dispara `.github/workflows/deploy.yml`, em 3 jobs sequenciais (`needs`):
+Todo push em `master` dispara `.github/workflows/deploy.yml`, em 3 jobs sequenciais (`needs`):
 
-1. **test** — `./mvnw test` como gate; falha o pipeline (sem publicar imagem nem tocar na VPS) se algum teste quebrar.
-2. **build-and-push** — builda a imagem a partir do `Dockerfile` existente e publica no GHCR (`ghcr.io/rafael8paulo/pactum-api`) com as tags `latest` e `${{ github.sha }}`.
-3. **deploy** — via SSH (`appleboy/ssh-action`), roda `docker compose pull pactum-api && docker compose up -d --wait pactum-api` na VPS.
+1. **test** — `./mvnw test` como gate; falha o pipeline (sem publicar imagem nem deployar) se algum teste quebrar.
+2. **build-and-push** — builda a imagem a partir do `Dockerfile` e publica no GHCR (`ghcr.io/rafael8paulo/pactum-api`) com as tags `latest` e `${{ github.sha }}`.
+3. **deploy** — dispara o deploy da aplicação no **Dokploy** (via API) e aguarda o deployment concluir; se o Dokploy reportar erro, o job falha e imprime os logs do deployment.
 
-Configuração necessária no repositório GitHub (Settings → Secrets and variables → Actions):
-
-| Nome | Tipo | Descrição |
-|---|---|---|
-| `SSH_PRIVATE_KEY` | Secret | Chave privada SSH para acesso à VPS |
-| `VPS_HOST` | Secret | Host/IP da VPS |
-| `VPS_USER` | Secret | Usuário SSH da VPS |
-| `VPS_SSH_PORT` | Secret | Porta SSH da VPS |
-
-O token do GHCR usa o `GITHUB_TOKEN` automático do workflow (`permissions: packages: write`), sem secret adicional. Assume-se que a VPS já possui um `docker-compose.yml` próprio com um serviço `pactum-api` apontando para a imagem do GHCR.
+O Dokploy é o plano de controle de deploy na VPS: recebe o gatilho, puxa a imagem nova do GHCR, recria o container com health check e mantém histórico e rollback pela própria UI. Não há mais SSH nem `docker compose` manual no pipeline. O token do GHCR usa o `GITHUB_TOKEN` automático do workflow (`permissions: packages: write`).
 
 **Testes de integração (`*IT.java`) não rodam neste pipeline** — dependem de Postgres/Testcontainers não provisionados em CI; ficam para uma iteração futura.
 
