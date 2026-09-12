@@ -6,11 +6,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   test:
@@ -30,46 +25,39 @@ jobs:
       - name: Run tests
         run: ./mvnw test -B
 
-  build-and-push:
+  deploy:
     needs: test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.VPS_SSH_PORT }}
-          script: |
-            cd ~/pactum
-            docker compose pull pactum-api
-            docker compose up -d --wait pactum-api
+      - name: Deploy no Dokploy
+        env:
+          DOKPLOY_URL: https://deploy.rpx.dev.br
+          DOKPLOY_TOKEN: ${{ secrets.DOKPLOY_TOKEN }}
+          APP_ID: R9hYYIker42ZJmL0GTFxm
+        run: |
+          set -euo pipefail
+          api() { curl -fsS -H "x-api-key: $DOKPLOY_TOKEN" -H 'Content-Type: application/json' "$@"; }
+          latest() {
+            api "$DOKPLOY_URL/api/deployment.all?applicationId=$APP_ID" \
+              | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['deploymentId'], d[0]['status']) if d else print()"
+          }
+          prev=$(latest || echo); prev=${prev%% *}
+          api -X POST "$DOKPLOY_URL/api/application.deploy" -d "{\"applicationId\":\"$APP_ID\"}" > /dev/null
+          echo "Deploy disparado no Dokploy (app $APP_ID)."
+          for _ in $(seq 1 90); do
+            sleep 8
+            line=$(latest || echo)
+            id=${line%% *}; status=${line##* }
+            if [ -n "$id" ] && [ "$id" != "$prev" ]; then
+              echo "deployment $id -> ${status:-?}"
+              if [ "$status" = "done" ]; then echo "Deploy concluído."; exit 0; fi
+              if [ "$status" = "error" ]; then
+                echo "::error::Deploy falhou no Dokploy"
+                api "$DOKPLOY_URL/api/deployment.readLogs?deploymentId=$id&tail=60" || true
+                exit 1
+              fi
+            fi
+          done
+          echo "::error::Timeout aguardando o Dokploy concluir o deploy"
+          exit 1
