@@ -7,6 +7,7 @@ import br.com.rpx.pactumapi.application.dto.response.ListaContasRecorrentesRespo
 import br.com.rpx.pactumapi.domain.model.ContaRecorrente;
 import br.com.rpx.pactumapi.domain.model.StatusContaRecorrente;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public class ContaRecorrenteMapper {
@@ -16,19 +17,23 @@ public class ContaRecorrenteMapper {
     public static ContaRecorrente toDomain(CadastrarContaRecorrenteRequest request) {
         return new ContaRecorrente(null, request.descricao(), request.valorPadrao(), request.categoria(),
                 request.diaVencimento(), request.competenciaInicio(), request.competenciaFim(),
-                StatusContaRecorrente.ATIVA, null);
+                StatusContaRecorrente.ATIVA, null, request.frequencia(), request.formaPagamentoId(),
+                request.dataBaseCobranca());
     }
 
     public static ContaRecorrente toDomain(EditarContaRecorrenteRequest request) {
         return new ContaRecorrente(null, request.descricao(), request.valorPadrao(), request.categoria(),
                 request.diaVencimento(), request.competenciaInicio(), request.competenciaFim(),
-                StatusContaRecorrente.ATIVA, null);
+                StatusContaRecorrente.ATIVA, null, request.frequencia(), request.formaPagamentoId(),
+                request.dataBaseCobranca());
     }
 
     public static ContaRecorrenteResponse toResponse(ContaRecorrente contaRecorrente) {
         return new ContaRecorrenteResponse(contaRecorrente.id(), contaRecorrente.descricao(),
                 contaRecorrente.valorPadrao(), contaRecorrente.categoria(), contaRecorrente.diaVencimento(),
-                contaRecorrente.competenciaInicio(), contaRecorrente.competenciaFim(), contaRecorrente.status());
+                contaRecorrente.competenciaInicio(), contaRecorrente.competenciaFim(), contaRecorrente.status(),
+                contaRecorrente.frequencia(), contaRecorrente.formaPagamentoId(), contaRecorrente.dataBaseCobranca(),
+                contaRecorrente.proximaCobranca(LocalDate.now()).orElse(null));
     }
 
     public static ListaContasRecorrentesResponse toListResponse(List<ContaRecorrente> contasRecorrentes) {

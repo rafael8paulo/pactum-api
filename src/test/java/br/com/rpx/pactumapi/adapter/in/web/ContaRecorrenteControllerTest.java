@@ -5,10 +5,18 @@ import br.com.rpx.pactumapi.domain.exception.ContaRecorrenteNaoEncontradaExcepti
 import br.com.rpx.pactumapi.domain.model.CategoriaDespesa;
 import br.com.rpx.pactumapi.domain.model.ContaRecorrente;
 import br.com.rpx.pactumapi.domain.model.Despesa;
+import br.com.rpx.pactumapi.domain.model.FrequenciaCobranca;
+import br.com.rpx.pactumapi.domain.model.HistoricoValorContaRecorrente;
+import br.com.rpx.pactumapi.domain.model.ProximaCobranca;
+import br.com.rpx.pactumapi.domain.model.ResumoContasRecorrentes;
 import br.com.rpx.pactumapi.domain.model.StatusContaRecorrente;
 import br.com.rpx.pactumapi.domain.model.StatusDespesa;
+import br.com.rpx.pactumapi.domain.model.TotalPorFormaPagamento;
 import br.com.rpx.pactumapi.domain.port.in.AtualizarStatusContaRecorrenteUseCase;
 import br.com.rpx.pactumapi.domain.port.in.CadastrarContaRecorrenteUseCase;
+import br.com.rpx.pactumapi.domain.port.in.ConsultarHistoricoValorUseCase;
+import br.com.rpx.pactumapi.domain.port.in.ConsultarProximasCobrancasUseCase;
+import br.com.rpx.pactumapi.domain.port.in.ConsultarResumoContasRecorrentesUseCase;
 import br.com.rpx.pactumapi.domain.port.in.EditarContaRecorrenteUseCase;
 import br.com.rpx.pactumapi.domain.port.in.GerarLancamentosRecorrentesUseCase;
 import br.com.rpx.pactumapi.domain.port.in.GerarLoteLancamentosRecorrentesUseCase;
@@ -25,6 +33,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
@@ -54,12 +63,16 @@ class ContaRecorrenteControllerTest {
     @MockitoBean RemoverContaRecorrenteUseCase removerUseCase;
     @MockitoBean GerarLancamentosRecorrentesUseCase gerarLancamentosUseCase;
     @MockitoBean GerarLoteLancamentosRecorrentesUseCase gerarLoteLancamentosUseCase;
+    @MockitoBean ConsultarHistoricoValorUseCase consultarHistoricoValorUseCase;
+    @MockitoBean ConsultarResumoContasRecorrentesUseCase consultarResumoUseCase;
+    @MockitoBean ConsultarProximasCobrancasUseCase consultarProximasCobrancasUseCase;
     @MockitoBean UsuarioAutenticadoResolver usuarioAutenticadoResolver;
 
     private static final UUID ID = UUID.randomUUID();
     private static final UUID USUARIO_ID = UUID.randomUUID();
     private static final ContaRecorrente CONTA = new ContaRecorrente(ID, "Financiamento do Carro", new BigDecimal("1335.50"),
-            CategoriaDespesa.FINANCIAMENTO, 10, YearMonth.of(2026, 1), null, StatusContaRecorrente.ATIVA, USUARIO_ID);
+            CategoriaDespesa.FINANCIAMENTO, 10, YearMonth.of(2026, 1), null, StatusContaRecorrente.ATIVA, USUARIO_ID,
+            FrequenciaCobranca.MENSAL, null, LocalDate.of(2026, 1, 10));
 
     private static final String PAYLOAD_VALIDO = """
             {
@@ -67,7 +80,9 @@ class ContaRecorrenteControllerTest {
               "valorPadrao": 1335.50,
               "categoria": "FINANCIAMENTO",
               "diaVencimento": 10,
-              "competenciaInicio": "2026-01"
+              "competenciaInicio": "2026-01",
+              "frequencia": "MENSAL",
+              "dataBaseCobranca": "2026-01-10"
             }
             """;
 
@@ -223,5 +238,46 @@ class ContaRecorrenteControllerTest {
 
         mockMvc.perform(post("/api/v1/contas-recorrentes/{id}/gerar-todos", ID))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deve_retornar200_com_historico_de_valores() throws Exception {
+        HistoricoValorContaRecorrente registro = new HistoricoValorContaRecorrente(
+                UUID.randomUUID(), ID, new BigDecimal("39.90"), LocalDate.of(2026, 1, 10), null);
+        when(consultarHistoricoValorUseCase.consultar(eq(ID), any())).thenReturn(List.of(registro));
+
+        mockMvc.perform(get("/api/v1/contas-recorrentes/{id}/historico-valores", ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.historico[0].valor").value(39.90));
+    }
+
+    @Test
+    void deve_retornar404_ao_consultar_historico_de_conta_inexistente() throws Exception {
+        when(consultarHistoricoValorUseCase.consultar(eq(ID), any()))
+                .thenThrow(new ContaRecorrenteNaoEncontradaException(ID));
+
+        mockMvc.perform(get("/api/v1/contas-recorrentes/{id}/historico-valores", ID))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deve_retornar200_com_resumo_de_contas_recorrentes() throws Exception {
+        ResumoContasRecorrentes resumo = new ResumoContasRecorrentes(new BigDecimal("180.00"),
+                List.of(new TotalPorFormaPagamento(null, null, new BigDecimal("180.00"))));
+        when(consultarResumoUseCase.consultar(any())).thenReturn(resumo);
+
+        mockMvc.perform(get("/api/v1/contas-recorrentes/resumo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalMensalRecorrente").value(180.00));
+    }
+
+    @Test
+    void deve_retornar200_com_proximas_cobrancas() throws Exception {
+        ProximaCobranca proxima = new ProximaCobranca(CONTA, LocalDate.of(2026, 1, 15));
+        when(consultarProximasCobrancasUseCase.consultar(eq(7), any())).thenReturn(List.of(proxima));
+
+        mockMvc.perform(get("/api/v1/contas-recorrentes/proximas-cobrancas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.proximasCobrancas[0].contaRecorrenteId").value(ID.toString()));
     }
 }

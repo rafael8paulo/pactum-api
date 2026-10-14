@@ -6,12 +6,19 @@ import br.com.rpx.pactumapi.application.dto.request.EditarContaRecorrenteRequest
 import br.com.rpx.pactumapi.application.dto.response.ContaRecorrenteResponse;
 import br.com.rpx.pactumapi.application.dto.response.ListaContasRecorrentesResponse;
 import br.com.rpx.pactumapi.application.dto.response.ListaDespesasResponse;
+import br.com.rpx.pactumapi.application.dto.response.ListaHistoricoValorResponse;
+import br.com.rpx.pactumapi.application.dto.response.ListaProximasCobrancasResponse;
+import br.com.rpx.pactumapi.application.dto.response.ResumoContasRecorrentesResponse;
 import br.com.rpx.pactumapi.application.mapper.ContaRecorrenteMapper;
 import br.com.rpx.pactumapi.application.mapper.DespesaMapper;
+import br.com.rpx.pactumapi.application.mapper.ResumoContasRecorrentesMapper;
 import br.com.rpx.pactumapi.config.security.UsuarioAutenticadoResolver;
 import br.com.rpx.pactumapi.domain.model.StatusContaRecorrente;
 import br.com.rpx.pactumapi.domain.port.in.AtualizarStatusContaRecorrenteUseCase;
 import br.com.rpx.pactumapi.domain.port.in.CadastrarContaRecorrenteUseCase;
+import br.com.rpx.pactumapi.domain.port.in.ConsultarHistoricoValorUseCase;
+import br.com.rpx.pactumapi.domain.port.in.ConsultarProximasCobrancasUseCase;
+import br.com.rpx.pactumapi.domain.port.in.ConsultarResumoContasRecorrentesUseCase;
 import br.com.rpx.pactumapi.domain.port.in.EditarContaRecorrenteUseCase;
 import br.com.rpx.pactumapi.domain.port.in.GerarLancamentosRecorrentesUseCase;
 import br.com.rpx.pactumapi.domain.port.in.GerarLoteLancamentosRecorrentesUseCase;
@@ -51,6 +58,9 @@ public class ContaRecorrenteController {
     private final RemoverContaRecorrenteUseCase removerUseCase;
     private final GerarLancamentosRecorrentesUseCase gerarLancamentosUseCase;
     private final GerarLoteLancamentosRecorrentesUseCase gerarLoteLancamentosUseCase;
+    private final ConsultarHistoricoValorUseCase consultarHistoricoValorUseCase;
+    private final ConsultarResumoContasRecorrentesUseCase consultarResumoUseCase;
+    private final ConsultarProximasCobrancasUseCase consultarProximasCobrancasUseCase;
     private final UsuarioAutenticadoResolver usuarioAutenticadoResolver;
 
     public ContaRecorrenteController(CadastrarContaRecorrenteUseCase cadastrarUseCase,
@@ -60,6 +70,9 @@ public class ContaRecorrenteController {
                                      RemoverContaRecorrenteUseCase removerUseCase,
                                      GerarLancamentosRecorrentesUseCase gerarLancamentosUseCase,
                                      GerarLoteLancamentosRecorrentesUseCase gerarLoteLancamentosUseCase,
+                                     ConsultarHistoricoValorUseCase consultarHistoricoValorUseCase,
+                                     ConsultarResumoContasRecorrentesUseCase consultarResumoUseCase,
+                                     ConsultarProximasCobrancasUseCase consultarProximasCobrancasUseCase,
                                      UsuarioAutenticadoResolver usuarioAutenticadoResolver) {
         this.cadastrarUseCase = cadastrarUseCase;
         this.listarUseCase = listarUseCase;
@@ -68,6 +81,9 @@ public class ContaRecorrenteController {
         this.removerUseCase = removerUseCase;
         this.gerarLancamentosUseCase = gerarLancamentosUseCase;
         this.gerarLoteLancamentosUseCase = gerarLoteLancamentosUseCase;
+        this.consultarHistoricoValorUseCase = consultarHistoricoValorUseCase;
+        this.consultarResumoUseCase = consultarResumoUseCase;
+        this.consultarProximasCobrancasUseCase = consultarProximasCobrancasUseCase;
         this.usuarioAutenticadoResolver = usuarioAutenticadoResolver;
     }
 
@@ -159,5 +175,40 @@ public class ContaRecorrenteController {
         UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
         var despesasGeradas = gerarLoteLancamentosUseCase.gerarTodos(id, usuarioId);
         return ResponseEntity.ok(DespesaMapper.toListResponse(despesasGeradas));
+    }
+
+    @Operation(summary = "Consultar histórico de valores de uma conta recorrente")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Histórico retornado"),
+            @ApiResponse(responseCode = "404", description = "Conta recorrente não encontrada")
+    })
+    @GetMapping("/{id}/historico-valores")
+    public ResponseEntity<ListaHistoricoValorResponse> historicoValores(@PathVariable UUID id) {
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        var historico = consultarHistoricoValorUseCase.consultar(id, usuarioId);
+        return ResponseEntity.ok(ResumoContasRecorrentesMapper.toHistoricoResponse(historico));
+    }
+
+    @Operation(summary = "Consultar resumo mensal recorrente")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Resumo retornado")
+    })
+    @GetMapping("/resumo")
+    public ResponseEntity<ResumoContasRecorrentesResponse> resumo() {
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        var resumo = consultarResumoUseCase.consultar(usuarioId);
+        return ResponseEntity.ok(ResumoContasRecorrentesMapper.toResponse(resumo));
+    }
+
+    @Operation(summary = "Consultar próximas cobranças")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Próximas cobranças retornadas")
+    })
+    @GetMapping("/proximas-cobrancas")
+    public ResponseEntity<ListaProximasCobrancasResponse> proximasCobrancas(
+            @RequestParam(defaultValue = "7") int dias) {
+        UUID usuarioId = usuarioAutenticadoResolver.getUsuarioId();
+        var proximasCobrancas = consultarProximasCobrancasUseCase.consultar(dias, usuarioId);
+        return ResponseEntity.ok(ResumoContasRecorrentesMapper.toListResponse(proximasCobrancas));
     }
 }

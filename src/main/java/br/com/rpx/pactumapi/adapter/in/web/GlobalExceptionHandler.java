@@ -4,6 +4,7 @@ import br.com.rpx.pactumapi.application.dto.response.ErrorResponse;
 import br.com.rpx.pactumapi.domain.exception.ContaRecorrenteNaoEncontradaException;
 import br.com.rpx.pactumapi.domain.exception.DespesaNaoEncontradaException;
 import br.com.rpx.pactumapi.domain.exception.EmailJaCadastradoException;
+import br.com.rpx.pactumapi.domain.exception.FormaPagamentoNaoEncontradaException;
 import br.com.rpx.pactumapi.domain.exception.ReceitaNaoEncontradaException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +56,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ContaRecorrenteNaoEncontradaException.class)
     public ResponseEntity<ErrorResponse> handleContaRecorrenteNaoEncontrada(
             ContaRecorrenteNaoEncontradaException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(FormaPagamentoNaoEncontradaException.class)
+    public ResponseEntity<ErrorResponse> handleFormaPagamentoNaoEncontrada(
+            FormaPagamentoNaoEncontradaException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
     }
 

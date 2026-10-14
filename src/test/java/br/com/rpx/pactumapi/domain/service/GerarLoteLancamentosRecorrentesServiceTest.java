@@ -4,6 +4,7 @@ import br.com.rpx.pactumapi.domain.exception.ContaRecorrenteNaoEncontradaExcepti
 import br.com.rpx.pactumapi.domain.model.CategoriaDespesa;
 import br.com.rpx.pactumapi.domain.model.ContaRecorrente;
 import br.com.rpx.pactumapi.domain.model.Despesa;
+import br.com.rpx.pactumapi.domain.model.FrequenciaCobranca;
 import br.com.rpx.pactumapi.domain.model.StatusContaRecorrente;
 import br.com.rpx.pactumapi.domain.port.out.BuscarContasRecorrentesPort;
 import br.com.rpx.pactumapi.domain.port.out.BuscarDespesasPort;
@@ -40,8 +41,13 @@ class GerarLoteLancamentosRecorrentesServiceTest {
     private final UUID contaId = UUID.randomUUID();
 
     private ContaRecorrente contaFixture(YearMonth inicio, YearMonth fim, StatusContaRecorrente status) {
+        return contaFixture(inicio, fim, status, FrequenciaCobranca.MENSAL);
+    }
+
+    private ContaRecorrente contaFixture(YearMonth inicio, YearMonth fim, StatusContaRecorrente status,
+                                          FrequenciaCobranca frequencia) {
         return new ContaRecorrente(contaId, "Financiamento", new BigDecimal("500.00"),
-                CategoriaDespesa.FINANCIAMENTO, null, inicio, fim, status, usuarioId);
+                CategoriaDespesa.FINANCIAMENTO, null, inicio, fim, status, usuarioId, frequencia, null, inicio.atDay(1));
     }
 
     @Test
@@ -136,5 +142,31 @@ class GerarLoteLancamentosRecorrentesServiceTest {
 
         assertThatThrownBy(() -> service.gerarTodos(contaId, UUID.randomUUID()))
                 .isInstanceOf(ContaRecorrenteNaoEncontradaException.class);
+    }
+
+    @Test
+    void deve_gerar_despesas_apenas_nos_meses_do_ciclo_trimestral() {
+        ContaRecorrente conta = contaFixture(YearMonth.of(2026, 1), YearMonth.of(2026, 7), StatusContaRecorrente.ATIVA,
+                FrequenciaCobranca.TRIMESTRAL);
+        when(buscarContasRecorrentesPort.buscarPorId(contaId)).thenReturn(Optional.of(conta));
+        when(buscarDespesasPort.existePorContaRecorrenteECompetencia(eq(contaId), any())).thenReturn(false);
+        when(salvarDespesaPort.salvar(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        List<Despesa> resultado = service.gerarTodos(contaId, usuarioId);
+
+        assertThat(resultado).extracting(Despesa::competencia)
+                .containsExactly(YearMonth.of(2026, 1), YearMonth.of(2026, 4), YearMonth.of(2026, 7));
+    }
+
+    @Test
+    void nao_deve_gerar_nenhuma_despesa_para_conta_semanal() {
+        ContaRecorrente conta = contaFixture(YearMonth.of(2026, 1), YearMonth.of(2026, 4), StatusContaRecorrente.ATIVA,
+                FrequenciaCobranca.SEMANAL);
+        when(buscarContasRecorrentesPort.buscarPorId(contaId)).thenReturn(Optional.of(conta));
+
+        List<Despesa> resultado = service.gerarTodos(contaId, usuarioId);
+
+        assertThat(resultado).isEmpty();
+        verify(salvarDespesaPort, never()).salvar(any());
     }
 }

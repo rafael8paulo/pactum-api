@@ -157,6 +157,7 @@ O Dokploy é o plano de controle de deploy na VPS: recebe o gatilho, puxa a imag
 - **Persistence adapters** testados com `@DataJpaTest` ou Testcontainers (sufixo `IT`)
 - **Nomenclatura**: `deve_[resultado]_quando_[condição]`
 - **Cobertura mínima**: 80% em `domain/` e `domain/service/`
+- **E2E**: toda nova funcionalidade ou alteração de comportamento que afete o fluxo do usuário deve vir acompanhada de testes E2E com Playwright, que vivem no repositório `pactum-frontend` (`e2e/`, config em `playwright.config.ts`, execução com `npm run test:e2e` contra a stack de `docker-compose.local.yml`)
 
 ---
 

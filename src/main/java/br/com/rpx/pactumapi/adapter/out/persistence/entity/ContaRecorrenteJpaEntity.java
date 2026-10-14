@@ -52,6 +52,15 @@ public class ContaRecorrenteJpaEntity {
     @Column(name = "usuario_id", nullable = false)
     private UUID usuarioId;
 
+    @Column(nullable = false, length = 20)
+    private String frequencia;
+
+    @Column(name = "forma_pagamento_id")
+    private UUID formaPagamentoId;
+
+    @Column(name = "data_base_cobranca", nullable = false)
+    private LocalDate dataBaseCobranca;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

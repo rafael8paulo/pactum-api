@@ -1,6 +1,7 @@
 package br.com.rpx.pactumapi.application.dto.request;
 
 import br.com.rpx.pactumapi.domain.model.CategoriaDespesa;
+import br.com.rpx.pactumapi.domain.model.FrequenciaCobranca;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -10,7 +11,9 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.UUID;
 
 public record CadastrarContaRecorrenteRequest(
         @NotBlank @Size(max = 100) String descricao,
@@ -18,5 +21,12 @@ public record CadastrarContaRecorrenteRequest(
         @NotNull CategoriaDespesa categoria,
         @Min(1) @Max(31) Integer diaVencimento,
         @NotNull @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM") YearMonth competenciaInicio,
-        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM") YearMonth competenciaFim
-) {}
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM") YearMonth competenciaFim,
+        FrequenciaCobranca frequencia,
+        @NotNull LocalDate dataBaseCobranca,
+        UUID formaPagamentoId
+) {
+    public FrequenciaCobranca frequencia() {
+        return frequencia == null ? FrequenciaCobranca.MENSAL : frequencia;
+    }
+}

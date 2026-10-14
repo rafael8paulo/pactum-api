@@ -32,6 +32,7 @@ public class GerarLancamentosRecorrentesService implements GerarLancamentosRecor
     public List<Despesa> gerar(YearMonth competencia, UUID usuarioId) {
         return buscarContasRecorrentesPort.buscarPorFiltros(StatusContaRecorrente.ATIVA, usuarioId).stream()
                 .filter(conta -> conta.cobreCompetencia(competencia))
+                .filter(conta -> ElegibilidadeCompetencia.eligivel(conta, competencia))
                 .map(conta -> GeradorDespesaRecorrente.gerarSeNecessario(conta, competencia, buscarDespesasPort, salvarDespesaPort))
                 .flatMap(Optional::stream)
                 .toList();

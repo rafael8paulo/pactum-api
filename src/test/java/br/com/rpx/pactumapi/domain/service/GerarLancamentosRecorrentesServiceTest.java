@@ -3,6 +3,7 @@ package br.com.rpx.pactumapi.domain.service;
 import br.com.rpx.pactumapi.domain.model.CategoriaDespesa;
 import br.com.rpx.pactumapi.domain.model.ContaRecorrente;
 import br.com.rpx.pactumapi.domain.model.Despesa;
+import br.com.rpx.pactumapi.domain.model.FrequenciaCobranca;
 import br.com.rpx.pactumapi.domain.model.StatusContaRecorrente;
 import br.com.rpx.pactumapi.domain.model.StatusDespesa;
 import br.com.rpx.pactumapi.domain.port.out.BuscarContasRecorrentesPort;
@@ -38,8 +39,13 @@ class GerarLancamentosRecorrentesServiceTest {
     private final YearMonth competencia = YearMonth.of(2026, 8);
 
     private ContaRecorrente contaFixture(YearMonth inicio, YearMonth fim, StatusContaRecorrente status) {
+        return contaFixture(inicio, fim, status, FrequenciaCobranca.MENSAL);
+    }
+
+    private ContaRecorrente contaFixture(YearMonth inicio, YearMonth fim, StatusContaRecorrente status,
+                                          FrequenciaCobranca frequencia) {
         return new ContaRecorrente(UUID.randomUUID(), "Streaming", new BigDecimal("39.90"),
-                CategoriaDespesa.LAZER, null, inicio, fim, status, usuarioId);
+                CategoriaDespesa.LAZER, null, inicio, fim, status, usuarioId, frequencia, null, inicio.atDay(1));
     }
 
     @Test
@@ -104,5 +110,45 @@ class GerarLancamentosRecorrentesServiceTest {
         service.gerar(competencia, usuarioId);
 
         verify(buscarContasRecorrentesPort, never()).buscarPorFiltros(StatusContaRecorrente.ATIVA, outroUsuario);
+    }
+
+    @Test
+    void nao_deve_gerar_despesa_para_conta_trimestral_fora_do_ciclo() {
+        ContaRecorrente conta = contaFixture(YearMonth.of(2026, 1), null, StatusContaRecorrente.ATIVA,
+                FrequenciaCobranca.TRIMESTRAL);
+        when(buscarContasRecorrentesPort.buscarPorFiltros(StatusContaRecorrente.ATIVA, usuarioId))
+                .thenReturn(List.of(conta));
+
+        List<Despesa> resultado = service.gerar(YearMonth.of(2026, 3), usuarioId);
+
+        assertThat(resultado).isEmpty();
+        verify(salvarDespesaPort, never()).salvar(any());
+    }
+
+    @Test
+    void deve_gerar_despesa_para_conta_trimestral_na_competencia_do_ciclo() {
+        ContaRecorrente conta = contaFixture(YearMonth.of(2026, 1), null, StatusContaRecorrente.ATIVA,
+                FrequenciaCobranca.TRIMESTRAL);
+        when(buscarContasRecorrentesPort.buscarPorFiltros(StatusContaRecorrente.ATIVA, usuarioId))
+                .thenReturn(List.of(conta));
+        when(buscarDespesasPort.existePorContaRecorrenteECompetencia(any(), any())).thenReturn(false);
+        when(salvarDespesaPort.salvar(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        List<Despesa> resultado = service.gerar(YearMonth.of(2026, 4), usuarioId);
+
+        assertThat(resultado).hasSize(1);
+    }
+
+    @Test
+    void nao_deve_gerar_despesa_para_conta_semanal() {
+        ContaRecorrente conta = contaFixture(YearMonth.of(2026, 1), null, StatusContaRecorrente.ATIVA,
+                FrequenciaCobranca.SEMANAL);
+        when(buscarContasRecorrentesPort.buscarPorFiltros(StatusContaRecorrente.ATIVA, usuarioId))
+                .thenReturn(List.of(conta));
+
+        List<Despesa> resultado = service.gerar(competencia, usuarioId);
+
+        assertThat(resultado).isEmpty();
+        verify(salvarDespesaPort, never()).salvar(any());
     }
 }

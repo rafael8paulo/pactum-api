@@ -3,6 +3,7 @@ package br.com.rpx.pactumapi.adapter.out.persistence;
 import br.com.rpx.pactumapi.adapter.out.persistence.repository.ContaRecorrenteJpaRepository;
 import br.com.rpx.pactumapi.domain.model.CategoriaDespesa;
 import br.com.rpx.pactumapi.domain.model.ContaRecorrente;
+import br.com.rpx.pactumapi.domain.model.FrequenciaCobranca;
 import br.com.rpx.pactumapi.domain.model.StatusContaRecorrente;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +30,8 @@ class ContaRecorrentePersistenceAdapterIT {
 
     private ContaRecorrente novaConta(StatusContaRecorrente status) {
         return new ContaRecorrente(null, "Streaming", new BigDecimal("39.90"),
-                CategoriaDespesa.LAZER, 10, YearMonth.of(2026, 1), null, status, usuarioId);
+                CategoriaDespesa.LAZER, 10, YearMonth.of(2026, 1), null, status, usuarioId,
+                FrequenciaCobranca.MENSAL, null, LocalDate.of(2026, 1, 10));
     }
 
     @Test

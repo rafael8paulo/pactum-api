@@ -40,6 +40,7 @@ public class GerarLoteLancamentosRecorrentesService implements GerarLoteLancamen
         }
         YearMonth limite = conta.competenciaFim() != null ? conta.competenciaFim() : YearMonth.now();
         return competencias(conta.competenciaInicio(), limite)
+                .filter(competencia -> ElegibilidadeCompetencia.eligivel(conta, competencia))
                 .map(competencia -> GeradorDespesaRecorrente.gerarSeNecessario(conta, competencia, buscarDespesasPort, salvarDespesaPort))
                 .flatMap(Optional::stream)
                 .toList();

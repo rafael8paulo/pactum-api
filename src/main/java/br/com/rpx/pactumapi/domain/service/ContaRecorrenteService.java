@@ -10,8 +10,11 @@ import br.com.rpx.pactumapi.domain.port.in.EditarContaRecorrenteUseCase;
 import br.com.rpx.pactumapi.domain.port.in.ListarContasRecorrentesUseCase;
 import br.com.rpx.pactumapi.domain.port.in.RemoverContaRecorrenteUseCase;
 import br.com.rpx.pactumapi.domain.port.out.BuscarContasRecorrentesPort;
+import br.com.rpx.pactumapi.domain.port.out.BuscarFormasPagamentoPort;
+import br.com.rpx.pactumapi.domain.port.out.BuscarHistoricoValorPort;
 import br.com.rpx.pactumapi.domain.port.out.RemoverContaRecorrentePort;
 import br.com.rpx.pactumapi.domain.port.out.SalvarContaRecorrentePort;
+import br.com.rpx.pactumapi.domain.port.out.SalvarHistoricoValorPort;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,21 +30,34 @@ public class ContaRecorrenteService implements
     private final SalvarContaRecorrentePort salvarPort;
     private final BuscarContasRecorrentesPort buscarPort;
     private final RemoverContaRecorrentePort removerPort;
+    private final SalvarHistoricoValorPort salvarHistoricoValorPort;
+    private final BuscarHistoricoValorPort buscarHistoricoValorPort;
+    private final BuscarFormasPagamentoPort buscarFormasPagamentoPort;
 
     public ContaRecorrenteService(SalvarContaRecorrentePort salvarPort,
                                   BuscarContasRecorrentesPort buscarPort,
-                                  RemoverContaRecorrentePort removerPort) {
+                                  RemoverContaRecorrentePort removerPort,
+                                  SalvarHistoricoValorPort salvarHistoricoValorPort,
+                                  BuscarHistoricoValorPort buscarHistoricoValorPort,
+                                  BuscarFormasPagamentoPort buscarFormasPagamentoPort) {
         this.salvarPort = salvarPort;
         this.buscarPort = buscarPort;
         this.removerPort = removerPort;
+        this.salvarHistoricoValorPort = salvarHistoricoValorPort;
+        this.buscarHistoricoValorPort = buscarHistoricoValorPort;
+        this.buscarFormasPagamentoPort = buscarFormasPagamentoPort;
     }
 
     @Override
     public ContaRecorrente cadastrar(ContaRecorrente contaRecorrente, UUID usuarioId) {
+        validarFormaPagamento(contaRecorrente.formaPagamentoId(), usuarioId);
         ContaRecorrente comUsuario = new ContaRecorrente(null, contaRecorrente.descricao(), contaRecorrente.valorPadrao(),
                 contaRecorrente.categoria(), contaRecorrente.diaVencimento(), contaRecorrente.competenciaInicio(),
-                contaRecorrente.competenciaFim(), StatusContaRecorrente.ATIVA, usuarioId);
-        return salvarPort.salvar(comUsuario);
+                contaRecorrente.competenciaFim(), StatusContaRecorrente.ATIVA, usuarioId,
+                contaRecorrente.frequencia(), contaRecorrente.formaPagamentoId(), contaRecorrente.dataBaseCobranca());
+        ContaRecorrente salva = salvarPort.salvar(comUsuario);
+        HistoricoValorRecorder.registrarCadastro(salva, salvarHistoricoValorPort);
+        return salva;
     }
 
     @Override
@@ -52,10 +68,14 @@ public class ContaRecorrenteService implements
     @Override
     public ContaRecorrente editar(UUID id, ContaRecorrente contaRecorrente, UUID usuarioId) {
         ContaRecorrente existente = buscarPorIdEValidarDono(id, usuarioId);
+        validarFormaPagamento(contaRecorrente.formaPagamentoId(), usuarioId);
         ContaRecorrente editada = new ContaRecorrente(id, contaRecorrente.descricao(), contaRecorrente.valorPadrao(),
                 contaRecorrente.categoria(), contaRecorrente.diaVencimento(), contaRecorrente.competenciaInicio(),
-                contaRecorrente.competenciaFim(), existente.status(), usuarioId);
-        return salvarPort.salvar(editada);
+                contaRecorrente.competenciaFim(), existente.status(), usuarioId,
+                contaRecorrente.frequencia(), contaRecorrente.formaPagamentoId(), contaRecorrente.dataBaseCobranca());
+        ContaRecorrente salva = salvarPort.salvar(editada);
+        HistoricoValorRecorder.registrarReajusteSeNecessario(existente, salva, buscarHistoricoValorPort, salvarHistoricoValorPort);
+        return salva;
     }
 
     @Override
@@ -63,7 +83,8 @@ public class ContaRecorrenteService implements
         ContaRecorrente existente = buscarPorIdEValidarDono(id, usuarioId);
         ContaRecorrente atualizada = new ContaRecorrente(existente.id(), existente.descricao(), existente.valorPadrao(),
                 existente.categoria(), existente.diaVencimento(), existente.competenciaInicio(),
-                existente.competenciaFim(), status, usuarioId);
+                existente.competenciaFim(), status, usuarioId,
+                existente.frequencia(), existente.formaPagamentoId(), existente.dataBaseCobranca());
         return salvarPort.salvar(atualizada);
     }
 
@@ -71,6 +92,18 @@ public class ContaRecorrenteService implements
     public void remover(UUID id, UUID usuarioId) {
         buscarPorIdEValidarDono(id, usuarioId);
         removerPort.remover(id);
+    }
+
+    private void validarFormaPagamento(UUID formaPagamentoId, UUID usuarioId) {
+        if (formaPagamentoId == null) {
+            return;
+        }
+        boolean valida = buscarFormasPagamentoPort.buscarPorId(formaPagamentoId)
+                .filter(forma -> forma.usuarioId().equals(usuarioId))
+                .isPresent();
+        if (!valida) {
+            throw new IllegalArgumentException("formaPagamentoId inválido: " + formaPagamentoId);
+        }
     }
 
     private ContaRecorrente buscarPorIdEValidarDono(UUID id, UUID usuarioId) {

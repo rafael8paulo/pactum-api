@@ -3,6 +3,7 @@ package br.com.rpx.pactumapi.adapter.out.persistence;
 import br.com.rpx.pactumapi.adapter.out.persistence.entity.ContaRecorrenteJpaEntity;
 import br.com.rpx.pactumapi.domain.model.CategoriaDespesa;
 import br.com.rpx.pactumapi.domain.model.ContaRecorrente;
+import br.com.rpx.pactumapi.domain.model.FrequenciaCobranca;
 import br.com.rpx.pactumapi.domain.model.StatusContaRecorrente;
 
 import java.time.YearMonth;
@@ -21,7 +22,10 @@ public class ContaRecorrentePersistenceMapper {
                 YearMonth.from(entity.getCompetenciaInicio()),
                 entity.getCompetenciaFim() != null ? YearMonth.from(entity.getCompetenciaFim()) : null,
                 StatusContaRecorrente.valueOf(entity.getStatus()),
-                entity.getUsuarioId()
+                entity.getUsuarioId(),
+                FrequenciaCobranca.valueOf(entity.getFrequencia()),
+                entity.getFormaPagamentoId(),
+                entity.getDataBaseCobranca()
         );
     }
 
@@ -36,6 +40,9 @@ public class ContaRecorrentePersistenceMapper {
         entity.setCompetenciaFim(contaRecorrente.competenciaFim() != null ? contaRecorrente.competenciaFim().atDay(1) : null);
         entity.setStatus(contaRecorrente.status().name());
         entity.setUsuarioId(contaRecorrente.usuarioId());
+        entity.setFrequencia(contaRecorrente.frequencia().name());
+        entity.setFormaPagamentoId(contaRecorrente.formaPagamentoId());
+        entity.setDataBaseCobranca(contaRecorrente.dataBaseCobranca());
         return entity;
     }
 }
