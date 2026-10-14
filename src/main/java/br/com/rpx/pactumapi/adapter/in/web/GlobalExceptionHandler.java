@@ -1,10 +1,12 @@
 package br.com.rpx.pactumapi.adapter.in.web;
 
 import br.com.rpx.pactumapi.application.dto.response.ErrorResponse;
+import br.com.rpx.pactumapi.domain.exception.CompetenciaEncerradaException;
 import br.com.rpx.pactumapi.domain.exception.ContaRecorrenteNaoEncontradaException;
 import br.com.rpx.pactumapi.domain.exception.DespesaNaoEncontradaException;
 import br.com.rpx.pactumapi.domain.exception.EmailJaCadastradoException;
 import br.com.rpx.pactumapi.domain.exception.FormaPagamentoNaoEncontradaException;
+import br.com.rpx.pactumapi.domain.exception.MetaEconomiaNaoEncontradaException;
 import br.com.rpx.pactumapi.domain.exception.ReceitaNaoEncontradaException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +65,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleFormaPagamentoNaoEncontrada(
             FormaPagamentoNaoEncontradaException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(MetaEconomiaNaoEncontradaException.class)
+    public ResponseEntity<ErrorResponse> handleMetaEconomiaNaoEncontrada(
+            MetaEconomiaNaoEncontradaException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(CompetenciaEncerradaException.class)
+    public ResponseEntity<ErrorResponse> handleCompetenciaEncerrada(
+            CompetenciaEncerradaException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
